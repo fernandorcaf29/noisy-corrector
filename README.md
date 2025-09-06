@@ -15,7 +15,7 @@ This project provides tools for processing and correcting noisy text data, with 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/noisy-corrector.git
+   git clone https://github.com/fernandorcaf29/noisy-corrector.git
    cd noisy-corrector
    ```
 
@@ -33,19 +33,6 @@ This project provides tools for processing and correcting noisy text data, with 
 ## Usage
 
 ```bash
-python -m noisy_corrector [options]
+flask run
 ```
 
-## Development
-
-To set up the development environment:
-
-1. Install development dependencies:
-   ```bash
-   pip install -r requirements-dev.txt
-   ```
-
-2. Run tests:
-   ```bash
-   pytest
-   ```
