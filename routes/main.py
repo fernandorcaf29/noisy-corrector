@@ -12,6 +12,10 @@ bp = Blueprint('main', __name__)
 def home():
     return render_template('index.html', title='Noisy Corrector')
 
+@bp.route('/playground', methods=['GET'])
+def playground():
+    return render_template('playground.html', title='Playground - Noisy Corrector')
+
 @bp.route('/process', methods=['POST'])
 def process():
     if 'document' not in request.files:
