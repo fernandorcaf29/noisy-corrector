@@ -1,9 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify
+from flask import Blueprint, Response, json, render_template, request, redirect, url_for, jsonify, stream_with_context
 from werkzeug.utils import secure_filename
 import os
 import asyncio
+import time
 from services.file_processing import read_txt_paragraphs
 from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
+from services.metrics import calculate_bert_score, calculate_bleu
 from services.mistral_client import ask_mistral
 from redlines import Redlines
 bp = Blueprint('main', __name__)
@@ -58,3 +60,186 @@ def process():
 
     
     return redirect(url_for('main.home'))
+
+# Adicione esta nova rota para SSE
+@bp.route('/process_evaluation_stream', methods=['GET'])
+def process_evaluation_stream():
+    # Esta rota só serve para estabelecer a conexão SSE
+    # O processamento real acontece na rota POST
+    def generate():
+        # Simular um stream vazio para manter a conexão
+        yield "data: {}\n\n"
+    
+    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+
+# Mantenha a rota POST original para o processamento
+@bp.route('/process_evaluation', methods=['POST'])
+def process_evaluation():
+    if 'reference_file' not in request.files or 'test_file' not in request.files:
+        return jsonify({'status': 'error', 'message': 'Arquivos não fornecidos'}), 400
+
+    reference_file = request.files['reference_file']
+    test_file = request.files['test_file']
+
+    if reference_file.filename == '' or test_file.filename == '':
+        return jsonify({'status': 'error', 'message': 'Nenhum arquivo selecionado'}), 400
+
+    # Variável global para armazenar progresso (simples para demo)
+    global processing_status
+    processing_status = {
+        'current': 0,
+        'total': 0,
+        'message': 'Iniciando...',
+        'percentage': 0
+    }
+
+    ref_path = None
+    test_path = None
+
+    try:
+        # Salvar arquivos temporariamente
+        import uuid
+        unique_id = str(uuid.uuid4())[:8]
+        
+        ref_filename = f"ref_{unique_id}_{secure_filename(reference_file.filename)}"
+        test_filename = f"test_{unique_id}_{secure_filename(test_file.filename)}"
+        
+        ref_path = os.path.join(UPLOAD_FOLDER, ref_filename)
+        test_path = os.path.join(UPLOAD_FOLDER, test_filename)
+        
+        reference_file.save(ref_path)
+        test_file.save(test_path)
+
+        # Ler arquivos
+        reference_lines = read_txt_paragraphs(ref_path)
+        test_lines = read_txt_paragraphs(test_path)
+
+        if len(reference_lines) != len(test_lines):
+            return jsonify({
+                'status': 'error', 
+                'message': f'Arquivos têm número diferente de linhas. Referência: {len(reference_lines)}, Teste: {len(test_lines)}'
+            }), 400
+
+        results = []
+        total_bleu_original = 0
+        total_bleu_corrected = 0
+        total_bert_original = 0
+        total_bert_corrected = 0
+        processed_count = 0
+        total_lines = len(reference_lines)
+
+        # Atualizar status inicial
+        processing_status['total'] = total_lines
+        processing_status['message'] = f'0/{total_lines} linhas processadas'
+        processing_status['percentage'] = 0
+
+        print(f"Iniciando avaliação de {total_lines} linhas...")
+
+        for i, (ref_line, test_line) in enumerate(zip(reference_lines, test_lines)):
+            ref_line = ref_line.strip()
+            test_line = test_line.strip()
+
+            if not ref_line or not test_line:
+                continue
+
+            try:
+                # Atualizar progresso
+                processing_status['current'] = i + 1
+                processing_status['message'] = f'{i+1}/{total_lines} linhas processadas'
+                processing_status['percentage'] = int((i + 1) / total_lines * 100)
+                print(f"{processing_status['message']} ({processing_status['percentage']}%)")
+                
+                corrected_line = ask_mistral(test_line)
+                
+                # Calcular métricas
+                bleu_original = calculate_bleu(ref_line, test_line)
+                bleu_corrected = calculate_bleu(ref_line, corrected_line)
+                bert_original = calculate_bert_score(ref_line, test_line)
+                bert_corrected = calculate_bert_score(ref_line, corrected_line)
+
+                # Acumular totais
+                total_bleu_original += bleu_original
+                total_bleu_corrected += bleu_corrected
+                total_bert_original += bert_original
+                total_bert_corrected += bert_corrected
+                processed_count += 1
+
+                results.append({
+                    'index': i + 1,
+                    'reference': ref_line,
+                    'original': test_line,
+                    'corrected': corrected_line,
+                    'bleu_original': round(bleu_original * 100, 2),
+                    'bleu_corrected': round(bleu_corrected * 100, 2),
+                    'bert_original': round(bert_original * 100, 2),
+                    'bert_corrected': round(bert_corrected * 100, 2),
+                    'bleu_diff': round((bleu_corrected - bleu_original) * 100, 2),
+                    'bert_diff': round((bert_corrected - bert_original) * 100, 2)
+                })
+
+            except Exception as e:
+                print(f"Erro processando linha {i+1}: {e}")
+                results.append({
+                    'index': i + 1,
+                    'reference': ref_line,
+                    'original': test_line,
+                    'corrected': f"[ERRO: {str(e)}]",
+                    'bleu_original': 0,
+                    'bleu_corrected': 0,
+                    'bert_original': 0,
+                    'bert_corrected': 0,
+                    'bleu_diff': 0,
+                    'bert_diff': 0,
+                    'error': True
+                })
+
+        # Calcular médias
+        avg_bleu_original = (total_bleu_original / processed_count * 100) if processed_count > 0 else 0
+        avg_bleu_corrected = (total_bleu_corrected / processed_count * 100) if processed_count > 0 else 0
+        avg_bert_original = (total_bert_original / processed_count * 100) if processed_count > 0 else 0
+        avg_bert_corrected = (total_bert_corrected / processed_count * 100) if processed_count > 0 else 0
+
+        print(f"Avaliação concluída! {processed_count}/{total_lines} linhas processadas")
+
+        return jsonify({
+            'status': 'success',
+            'total_lines': total_lines,
+            'processed_count': processed_count,
+            'results': results,
+            'summary': {
+                'avg_bleu_original': round(avg_bleu_original, 2),
+                'avg_bleu_corrected': round(avg_bleu_corrected, 2),
+                'avg_bert_original': round(avg_bert_original, 2),
+                'avg_bert_corrected': round(avg_bert_corrected, 2),
+                'avg_bleu_improvement': round(avg_bleu_corrected - avg_bleu_original, 2),
+                'avg_bert_improvement': round(avg_bert_corrected - avg_bert_original, 2)
+            }
+        })
+
+    except Exception as e:
+        print(f"Erro geral na avaliação: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+    finally:
+        # Limpar arquivos temporários
+        try:
+            if ref_path and os.path.exists(ref_path):
+                os.remove(ref_path)
+            if test_path and os.path.exists(test_path):
+                os.remove(test_path)
+        except Exception as e:
+            print(f"Erro ao limpar arquivos temporários: {e}")
+
+# Adicione esta rota para verificar o progresso
+@bp.route('/progress_status')
+def progress_status():
+    global processing_status
+    return jsonify(processing_status)
+
+# Variável global para armazenar o progresso
+processing_status = {
+    'current': 0,
+    'total': 0,
+    'message': 'Aguardando processamento...',
+    'percentage': 0
+}
