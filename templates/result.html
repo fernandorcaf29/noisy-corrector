@@ -1,0 +1,79 @@
+{% extends "logo-box.html" %} {% block content %}
+<script src="{{ url_for('static', filename='js/result.js') }}"></script>
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/result.css') }}"
+/>
+<div id="results-section">
+  <div class="flex justify-between items-center mb-1">
+    <h2 class="text-lg font-bold text-gray-800">Review changes</h2>
+    <div class="flex items-center space-x-2">
+      <button
+        id="prev-btn"
+        class="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50"
+        disabled
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          ></path>
+        </svg>
+      </button>
+      <span id="page-info" class="text-sm text-gray-600">1/1</span>
+      <button
+        id="next-btn"
+        class="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50"
+        disabled
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          ></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div
+    id="diff-container"
+    class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto"
+  ></div>
+  <button
+    id="download-btn"
+    onClick="downloadFile()"
+    class="mt-4 self-end flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+  >
+    <svg
+      class="w-4 h-4 mr-2"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M4 16v1a3 3 0 003 3h10a3
+            3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4
+            4V4"
+      ></path>
+    </svg>
+    Download
+  </button>
+</div>
+{% endblock %}

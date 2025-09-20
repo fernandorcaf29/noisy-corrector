@@ -1,0 +1,11 @@
+.redline-deleted {
+  background-color: oklch(80.8% 0.114 19.571);
+  border-radius: 5px;
+  margin: 0 1px;
+}
+
+.redline-inserted {
+  background-color: oklch(93.8% 0.127 124.321);
+  border-radius: 5px;
+  margin: 0 1px;
+}
