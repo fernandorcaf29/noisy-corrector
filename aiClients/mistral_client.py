@@ -1,22 +1,29 @@
-from mistralai.client import MistralClient as MistralAIClient
-from mistralai.models.chat_completion import ChatMessage
+from mistralai import Mistral
 from prompts import prompt_model_map
 from .ai_client import AIClient
 from flask import abort
+from mistralai import models
 
 
 class MistralClient(AIClient):
     def __init__(self, api_key):
-        self.client = MistralAIClient(api_key)
+        self.client = Mistral(api_key)
 
     def ask_correction(self, transcription, model):
         try:
             messages = [
-                ChatMessage(role="user", content=prompt_model_map[model](transcription))
+                {
+                    "role": "user",
+                    "content": prompt_model_map[model](transcription),
+                },
             ]
-            chat_response = self.client.chat(model=model, messages=messages)
-            print(chat_response.choices[0].message.content + "\n")
+
+            chat_response = self.client.chat.complete(
+                model=model,
+                messages=messages,
+            )
             return chat_response.choices[0].message.content
-        except Exception as e:
-            print(e)
-            abort(500)
+        except models.HTTPValidationError as e:
+            abort(422)
+        except models.SDKError as e:
+            abort(e.status_code)
