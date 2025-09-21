@@ -1,66 +1,111 @@
-from flask import Blueprint, Response, json, render_template, request, redirect, url_for, jsonify, stream_with_context
-from werkzeug.utils import secure_filename
-import os
-import asyncio
-import time
-import uuid
-from services.file_processing import read_txt_paragraphs
-from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
-from services.metrics import calculate_bert_score, calculate_bleu
-from services.mistral_client import ask_mistral
-from redlines import Redlines
-bp = Blueprint('main', __name__)
+from flask import Blueprint, render_template, request, abort, current_app
+from aiClients.ai_client_factory import AIClientFactory
 
-@bp.route('/', methods=['GET'])
+bp = Blueprint("main", __name__)
+
+
+@bp.route("/", methods=["GET"])
 def home():
-    return render_template('index.html', title='Noisy Corrector')
+    return render_template("index.html")
 
 @bp.route('/playground', methods=['GET'])
 def playground():
     return render_template('playground.html', title='Playground - Noisy Corrector')
 
-@bp.route('/process', methods=['POST'])
-def process():
-    if 'document' not in request.files:
-        return redirect(url_for('main.home'))
+@bp.route("/result", methods=["POST", "GET"])
+def result():
+    if request.method != "POST":
+        return render_template("index.html")
 
-    file = request.files['document']
+    if "document" not in request.files:
+        return abort(400)
 
-    if file.filename == '':
-        return redirect(url_for('main.home'))
+    file = request.files["document"]
 
-    if file and '.' in file.filename and \
-       file.filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS:
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        file.save(filepath)
+    if not file:
+        return abort(400)
 
-        paragraphs = read_txt_paragraphs(filepath)
+    model = request.form.get("model")
 
-        corrected_paragraphs = []
+    if not model:
+        return abort(400)
 
-        for p in paragraphs:
-            corrected_paragraphs.append(ask_mistral(p))
-        
-        redlines = []
+    api_key = request.form.get("api_key")
 
-        for orig, corrected in zip(paragraphs, corrected_paragraphs):
-            redline = Redlines(orig, corrected, markdown_style='custom_css')
-            redlines.append({
-                'markdown_diff': redline.output_markdown
-            })
-        
-        content = '\n\n'.join(corrected_paragraphs)
-        
-        return jsonify({
-            'status': 'success',
-            'redlines': redlines,
-            'file_content': content,
-            'filename': f'corrected_{filename}'
-        })
+    if not api_key:
+        return abort(400)
 
-    
-    return redirect(url_for('main.home'))
+    client = AIClientFactory.create_client(model, api_key)
+
+    file_processer = current_app.extensions["file_processer"]
+    diff_generator = current_app.extensions["diff_generator"]
+
+    files = file_processer.process(file, client, model)
+
+    diff = diff_generator.generate_diff(
+        files["input_file"]["paragraphs"], files["output_file"]["paragraphs"]
+    )
+    print("diff", diff)
+    return render_template(
+        "result.html",
+        redlines=diff,
+        file_content=files["output_file"]["content"],
+        filename=files["output_file"]["filename"],
+    )
+
+
+@bp.errorhandler(429)
+def too_many_requests(e):
+    return (
+        render_template(
+            "error.html", error_message="Too many requests", error_code=429
+        ),
+        429,
+    )
+
+
+@bp.errorhandler(400)
+def bad_request(e):
+    return (
+        render_template("error.html", error_message="Bad request", error_code=400),
+        400,
+    )
+
+
+@bp.errorhandler(405)
+def method_not_allowed(e):
+    return (
+        render_template(
+            "error.html", error_message="Method not allowed", error_code=405
+        ),
+        405,
+    )
+
+
+@bp.errorhandler(401)
+def unauthorized(e):
+    return (
+        render_template("error.html", error_message="Unauthorized", error_code=401),
+        401,
+    )
+
+
+@bp.errorhandler(403)
+def forbidden(e):
+    return (
+        render_template("error.html", error_message="Forbidden", error_code=403),
+        403,
+    )
+
+
+@bp.errorhandler(500)
+def internal_server_error(e):
+    return (
+        render_template(
+            "error.html", error_message="Internal server error", error_code=500
+        ),
+        500,
+    )
 
 @bp.route('/process_evaluation', methods=['POST'])
 def process_evaluation():

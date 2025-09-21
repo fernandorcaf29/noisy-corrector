@@ -1,21 +1,21 @@
 from flask import Flask
 from config import UPLOAD_FOLDER, MAX_CONTENT_LENGTH
 from routes.main import bp as main_bp
-import logging
+from ext.file_processer import FileProcesser
+from ext.diff_generator import DiffGenerator
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
-class ProgressFilter(logging.Filter):
-    def filter(self, record):
-        return '/progress_status' not in record.getMessage()
+file_processer = FileProcesser()
+diff_generator = DiffGenerator()
 
-# Aplicar o filter
-log = logging.getLogger('werkzeug')
-log.addFilter(ProgressFilter())
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
+
+file_processer.init_app(app)
+diff_generator.init_app(app)
 
 app.register_blueprint(main_bp)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
