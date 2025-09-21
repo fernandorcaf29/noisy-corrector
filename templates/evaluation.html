@@ -11,9 +11,9 @@
 
 <script src="{{ url_for('static', filename='js/evaluation.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/result.css') }}" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div id="evaluation-section" class="flex flex-col gap-4">
-
   <div class="flex justify-between items-center mb-1">
     <h2 class="text-lg font-bold text-gray-800">Reference line</h2>
     <div class="flex items-center space-x-2">
@@ -31,14 +31,25 @@
     </div>
   </div>
 
-  <div>
-    <div id="reference-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto"></div>
-  </div>
-
+  <div id="reference-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto"></div>
   <h2 class="text-lg font-bold text-gray-800">Review changes</h2>
-  <div>
-    <div id="diff-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto"></div>
-  </div>
+  <div id="diff-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto"></div>
   <div id="resultsList" class="space-y-4"></div>
+
+  <button 
+    id="show-summary-btn" 
+    class="mt-4 self-start flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+    >
+      View Summary
+  </button>
+</div>
+
+<div id="summary-modal" class="fixed inset-0 hidden bg-black bg-opacity-50 flex justify-center items-center">
+  <div class="bg-white rounded-lg p-6 w-3/4 max-w-2xl relative">
+    <button id="close-summary-btn" class="absolute top-2 right-2 text-3xl p-2 text-gray-500 hover:text-gray-800">&times;</button>
+    <h2 class="text-xl font-bold mb-4">Summary & Metrics</h2>
+    <div id="summaryStats" class="grid grid-cols-2 gap-4 mb-6"></div>
+    <canvas id="metricsChart" class="mb-4"></canvas>
+  </div>
 </div>
 {% endblock %}
