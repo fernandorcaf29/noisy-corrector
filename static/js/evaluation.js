@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     metricsChart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: ['BLEU Score', 'BERT Score'],
+        labels: ['Semantic Score', 'Lexic Score'],
         datasets: [
           { label:'Before Correction', data:[summary.avg_bleu_original, summary.avg_bert_original], backgroundColor:'rgba(239,68,68,0.7)', borderColor:'rgba(239,68,68,1)', borderWidth:1 },
           { label:'After Correction', data:[summary.avg_bleu_corrected, summary.avg_bert_corrected], backgroundColor:'rgba(34,197,94,0.7)', borderColor:'rgba(34,197,94,1)', borderWidth:1 }
