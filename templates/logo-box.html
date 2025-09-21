@@ -1,11 +1,11 @@
 {% extends "base.html" %} {% block main %}
-<div class="container mx-auto py-8">
+<div class="container mx-auto max-w-xl py-8">
   <div>
     <a href="{{ url_for('main.home') }}">
       <div class="flex items-center justify-center gap-2 mb-2">
         <h1 class="text-5xl font-bold text-gray-800">noisy corrector.</h1>
         <img
-          src="{{ url_for('static', filename='svg/frequency.svg') }}"
+          src="{{ url_for('static', filename='svg/frequency-gray.svg') }}"
           alt="frequency"
         />
       </div>
@@ -14,7 +14,7 @@
       Correct noisy text from your auto-generated audio transcription
     </p>
 
-    <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
+    <div class="mx-auto bg-white p-6 rounded-lg shadow-md">
       {% block content %}{% endblock %}
     </div>
   </div>

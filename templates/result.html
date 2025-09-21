@@ -1,4 +1,9 @@
 {% extends "logo-box.html" %} {% block content %}
+<script>
+  let currentFileContent = '{{ file_content | tojson | safe }}';
+  let currentFilename = '{{ filename | tojson | safe }}';
+  let currentRedlines = '{{ redlines | tojson | safe }}';
+</script>
 <script src="{{ url_for('static', filename='js/result.js') }}"></script>
 <link
   rel="stylesheet"
@@ -55,7 +60,6 @@
   ></div>
   <button
     id="download-btn"
-    onClick="downloadFile()"
     class="mt-4 self-end flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
   >
     <svg

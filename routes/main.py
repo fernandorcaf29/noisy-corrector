@@ -1,11 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify
-from werkzeug.utils import secure_filename
-import os
-import asyncio
-from services.file_processing import read_txt_paragraphs
-from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
-from services.mistral_client import ask_mistral
-from redlines import Redlines
+from flask import Blueprint, render_template, request, abort, current_app
+from aiClients.ai_client_factory import AIClientFactory
 
 bp = Blueprint("main", __name__)
 
@@ -15,40 +9,37 @@ def home():
     return render_template("index.html")
 
 
-@bp.route("/process", methods=["POST"])
-def process():
+@bp.route("/result", methods=["POST"])
+def result():
     if "document" not in request.files:
-        return redirect(url_for("main.home"))
+        return abort(400)
 
     file = request.files["document"]
 
-    if file.filename == "":
-        return redirect(url_for("main.home"))
+    model = request.form.get("model")
 
-    if (
-        file
-        and "." in file.filename
-        and file.filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-    ):
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        file.save(filepath)
+    if not model:
+        return abort(400)
 
-        paragraphs = read_txt_paragraphs(filepath)
+    api_key = request.form.get("api_key")
 
-        corrected_paragraphs = []
+    if not api_key:
+        return abort(400)
 
-        for p in paragraphs:
-            corrected_paragraphs.append(ask_mistral(p))
+    client = AIClientFactory.create_client(model, api_key)
 
-        redlines = []
+    file_processer = current_app.extensions["file_processer"]
+    diff_generator = current_app.extensions["diff_generator"]
 
-        for orig, corrected in zip(paragraphs, corrected_paragraphs):
-            redline = Redlines(orig, corrected, markdown_style="custom_css")
-            redlines.append({"markdown_diff": redline.output_markdown})
+    files = file_processer.process(file, client, model)
 
-        content = "\n\n".join(corrected_paragraphs)
+    diff = diff_generator.generate_diff(
+        files["input_file"]["paragraphs"], files["output_file"]["paragraphs"]
+    )
 
-        return render_template("result.html", redlines=redlines, content=content)
-
-    return redirect(url_for("main.home"))
+    return render_template(
+        "result.html",
+        redlines=diff,
+        file_content=files["output_file"]["content"],
+        filename=files["output_file"]["filename"],
+    )
