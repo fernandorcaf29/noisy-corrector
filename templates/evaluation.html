@@ -1,0 +1,44 @@
+{% extends "logo-box.html" %}
+
+{% block content %}
+<script>
+  let currentFileContent = {{ file_content | tojson | safe }};
+  let currentFilename = {{ filename | tojson | safe }};
+  let currentRedlines = {{ redlines | tojson | safe }};
+  let referenceLines = {{ reference_lines | tojson | safe }};
+  let metrics = {{ metrics | tojson | safe }};
+</script>
+
+<script src="{{ url_for('static', filename='js/evaluation.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/result.css') }}" />
+
+<div id="evaluation-section" class="flex flex-col gap-4">
+
+  <div class="flex justify-between items-center mb-1">
+    <h2 class="text-lg font-bold text-gray-800">Reference line</h2>
+    <div class="flex items-center space-x-2">
+      <button id="prev-btn" class="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50" disabled>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </button>
+      <span id="page-info" class="text-sm text-gray-600">1/1</span>
+      <button id="next-btn" class="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50" disabled>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div>
+    <div id="reference-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto"></div>
+  </div>
+
+  <h2 class="text-lg font-bold text-gray-800">Review changes</h2>
+  <div>
+    <div id="diff-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto"></div>
+  </div>
+  <div id="resultsList" class="space-y-4"></div>
+</div>
+{% endblock %}

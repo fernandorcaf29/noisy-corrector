@@ -1,266 +1,102 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ title }}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    .redline-deleted { background-color: oklch(80.8% 0.114 19.571); border-radius: 5px; margin: 0 1px; }
-    .redline-inserted { background-color: oklch(93.8% 0.127 124.321); border-radius: 5px; margin: 0 1px; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .animate-spin { animation: spin 1s linear infinite; }
-  </style>
-</head>
-<body class="bg-gray-100 min-h-screen">
-  <header class="flex justify-end py-4 px-8">
-    <div class="flex items-center gap-2">
-      <a class="text-gray-800 hover:text-gray-600 text-lg px-2" href="{{ url_for('main.playground') }}">Playground</a>
-      <a class="text-gray-800 hover:text-gray-600 text-lg px-2" href="{{ url_for('main.home') }}">Home</a>
-    </div>
-  </header>
+{% extends "logo-box.html" %}
 
-  <main class="container mx-auto py-8 px-4">
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-gray-800 mb-2">Playground - Original vs Corrigido</h1>
-      <p class="text-gray-600">Avalie a correção de transcrições com métricas semânticas e léxicas</p>
+{% block content %}
+<form
+  id="evaluationForm"
+  action="{{ url_for('main.process_evaluation') }}"
+  method="POST"
+  enctype="multipart/form-data"
+>
+  <div class="mb-6 flex flex-col gap-6">
+    <div>
+      <label
+        class="block text-gray-700 text-sm font-bold mb-2 text-center"
+        for="reference_file"
+      >
+        Choose Reference File (.txt)
+      </label>
+      <input
+        type="file"
+        name="reference_file"
+        id="reference_file"
+        accept=".txt"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        required
+      />
     </div>
 
-    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
-      <h2 class="text-xl font-bold mb-4 text-gray-800">Upload de Arquivos para Avaliação</h2>
-      <form id="evaluationForm" action="{{ url_for('main.process_evaluation') }}" method="POST" enctype="multipart/form-data">
-        <div class="grid md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label class="block text-gray-700 text-sm font-bold mb-2">Arquivo de Referência (Texto Correto) *</label>
-            <input type="file" name="reference_file" accept=".txt" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
-            <p class="text-xs text-gray-500 mt-1">Texto de referência correto</p>
-          </div>
-          <div>
-            <label class="block text-gray-700 text-sm font-bold mb-2">Arquivo de Teste (Transcrição) *</label>
-            <input type="file" name="test_file" accept=".txt" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
-            <p class="text-xs text-gray-500 mt-1">Transcrição a ser corrigida</p>
-          </div>
-        </div>
-        <button type="submit" class="w-full py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
-          Iniciar Avaliação
-        </button>
-      </form>
+    <div>
+      <label
+        class="block text-gray-700 text-sm font-bold mb-2 text-center"
+        for="test_file"
+      >
+        Choose Test File (.txt)
+      </label>
+      <input
+        type="file"
+        name="test_file"
+        id="test_file"
+        accept=".txt"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        required
+      />
     </div>
 
-    <!-- Resultados -->
-    <div id="resultsSection" class="max-w-6xl mx-auto mt-8 hidden">
-      <!-- Estatísticas Sumárias -->
-      <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 class="text-xl font-bold mb-4 text-gray-800">Resultados da Avaliação</h2>
-        <div id="summaryStats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
-        <canvas id="metricsChart" width="400" height="200"></canvas>
-      </div>
-
-      <!-- Detalhes por Linha -->
-      <div class="bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-xl font-bold mb-4 text-gray-800">Detalhes por Linha</h2>
-        <div id="resultsList" class="space-y-4"></div>
-
-        <!-- Controles de Paginação -->
-        <div id="paginationControls" class="flex justify-center items-center gap-2 mt-4 hidden">
-          <button id="prevPage" class="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700">Anterior</button>
-          <span id="pageInfo" class="text-gray-700"></span>
-          <button id="nextPage" class="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700">Próximo</button>
-        </div>
-      </div>
+    <div class="flex gap-2">
+      <select
+        name="model"
+        required
+        id="model"
+        class="px-3 py-2 w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+      >
+        <option value="">Select a model</option>
+        <option value="mistral-large-latest">
+          mistral-large-latest (Recommended)
+        </option>
+        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+      </select>
+      <input
+        type="password"
+        name="api_key"
+        required
+        id="api_key"
+        placeholder="API Key"
+        class="px-3 py-2 w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+      />
     </div>
+  </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
-      <div class="bg-white p-6 rounded-lg text-center min-w-80">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-        <p class="text-gray-700 font-semibold">Processando avaliação...</p>
-      </div>
-    </div>
+  <button
+    type="submit"
+    id="submitBtn"
+    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+  >
+    <span id="buttonText">Start Evaluation</span>
+    <span id="buttonSpinner" class="flex gap-2 items-center hidden">
+      <svg
+        class="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+      Processing...
+    </span>
+  </button>
+</form>
 
-  </main>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('evaluationForm');
-      const resultsSection = document.getElementById('resultsSection');
-      const loadingOverlay = document.getElementById('loadingOverlay');
-      const summaryStats = document.getElementById('summaryStats');
-      const resultsList = document.getElementById('resultsList');
-      let metricsChart = null;
-
-      let currentPage = 1;
-      const rowsPerPage = 1;
-      let paginatedResults = [];
-
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const refFile = formData.get('reference_file');
-        const testFile = formData.get('test_file');
-
-        if (!refFile || !testFile || refFile.size === 0 || testFile.size === 0) {
-          alert('Por favor, selecione ambos os arquivos');
-          return;
-        }
-
-        loadingOverlay.classList.remove('hidden');
-        resultsSection.classList.add('hidden');
-
-        try {
-          const response = await fetch('/process_evaluation', { method: 'POST', body: formData });
-          if (!response.ok) throw new Error('Erro no processamento');
-
-          const data = await response.json();
-          if (data.status !== 'success') throw new Error(data.message || 'Erro no processamento');
-
-          displayResults(data);
-          loadingOverlay.classList.add('hidden');
-
-        } catch (error) {
-          console.error(error);
-          loadingOverlay.classList.add('hidden');
-          alert('Erro ao processar arquivos: ' + error.message);
-        }
-      });
-
-      function displayResults(data) {
-        // Estatísticas sumárias
-        summaryStats.innerHTML = `
-          <div class="text-center p-4 bg-blue-50 rounded-lg">
-            <div class="text-2xl font-bold text-blue-600">${data.total_lines}</div>
-            <div class="text-sm text-blue-800">Total de Linhas</div>
-          </div>
-          <div class="text-center p-4 bg-green-50 rounded-lg">
-            <div class="text-2xl font-bold text-green-600">${data.processed_count}</div>
-            <div class="text-sm text-green-800">Processadas com Sucesso</div>
-          </div>
-          <div class="text-center p-4 bg-purple-50 rounded-lg">
-            <div class="text-2xl font-bold text-purple-600">${data.summary.avg_bleu_improvement.toFixed(2)}%</div>
-            <div class="text-sm text-purple-800">Melhoria semântica</div>
-          </div>
-          <div class="text-center p-4 bg-orange-50 rounded-lg">
-            <div class="text-2xl font-bold text-orange-600">${data.summary.avg_bert_improvement.toFixed(2)}%</div>
-            <div class="text-sm text-orange-800">Melhoria léxica</div>
-          </div>
-        `;
-
-        createChart(data.summary);
-
-        // Paginação
-        paginatedResults = data.results;
-        currentPage = 1;
-        renderPage(currentPage);
-        document.getElementById('paginationControls').classList.remove('hidden');
-
-        resultsSection.classList.remove('hidden');
-      }
-
-      function renderPage(page) {
-        const resultsList = document.getElementById('resultsList');
-        const totalPages = Math.ceil(paginatedResults.length / rowsPerPage);
-        const start = (page - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        const pageItems = paginatedResults.slice(start, end);
-
-        resultsList.innerHTML = pageItems.map(result => `
-          <div class="border rounded-lg p-4 mb-4 ${result.error ? 'bg-red-50 border-red-200' : 'bg-white'}">
-            <div class="font-bold mb-3 text-gray-700">
-              Linha ${result.index} ${result.error ? '<span class="text-red-600 text-sm">(Erro)</span>' : ''}
-            </div>
-            <div class="grid md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <div class="text-sm text-gray-600 font-semibold mb-1">Referência:</div>
-                <div class="p-3 bg-gray-100 rounded text-sm whitespace-pre-wrap">${result.reference}</div>
-              </div>
-              <div>
-                <div class="text-sm text-gray-600 font-semibold mb-1">Original:</div>
-                <div class="p-3 bg-red-50 rounded text-sm whitespace-pre-wrap">${result.original}</div>
-              </div>
-              <div>
-                <div class="text-sm text-gray-600 font-semibold mb-1">Corrigido:</div>
-                <div class="p-3 bg-green-50 rounded text-sm whitespace-pre-wrap">${result.corrected}</div>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div class="text-center p-2 bg-gray-50 rounded">
-                <div class="font-semibold">Score semântico</div>
-                <div class="text-2xl font-bold ${result.bleu_diff > 0 ? 'text-green-600' : 'text-red-600'}">
-                  ${result.bleu_corrected.toFixed(1)}%
-                </div>
-                <div class="text-xs text-gray-600">
-                  ${result.bleu_original.toFixed(1)}% → 
-                  <span class="${result.bleu_diff > 0 ? 'text-green-600' : 'text-red-600'}">
-                    ${result.bleu_diff > 0 ? '+' : ''}${result.bleu_diff.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-              <div class="text-center p-2 bg-gray-50 rounded">
-                <div class="font-semibold">Score léxico</div>
-                <div class="text-2xl font-bold ${result.bert_diff > 0 ? 'text-green-600' : 'text-red-600'}">
-                  ${result.bert_corrected.toFixed(1)}%
-                </div>
-                <div class="text-xs text-gray-600">
-                  ${result.bert_original.toFixed(1)}% → 
-                  <span class="${result.bert_diff > 0 ? 'text-green-600' : 'text-red-600'}">
-                    ${result.bert_diff > 0 ? '+' : ''}${result.bert_diff.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        `).join('');
-
-        document.getElementById('pageInfo').textContent = `Página ${page} de ${totalPages}`;
-        document.getElementById('prevPage').disabled = page === 1;
-        document.getElementById('nextPage').disabled = page === totalPages;
-      }
-
-      document.getElementById('prevPage').addEventListener('click', () => {
-        if (currentPage > 1) renderPage(--currentPage);
-      });
-      document.getElementById('nextPage').addEventListener('click', () => {
-        const totalPages = Math.ceil(paginatedResults.length / rowsPerPage);
-        if (currentPage < totalPages) renderPage(++currentPage);
-      });
-
-      function createChart(summary) {
-        const ctx = document.getElementById('metricsChart').getContext('2d');
-        if (metricsChart) metricsChart.destroy();
-        metricsChart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: ['Score semântico', 'Score léxico'],
-            datasets: [
-              {
-                label: 'Antes da Correção',
-                data: [summary.avg_bleu_original, summary.avg_bert_original],
-                backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                borderColor: 'rgba(239, 68, 68, 1)',
-                borderWidth: 1
-              },
-              {
-                label: 'Após Correção',
-                data: [summary.avg_bleu_corrected, summary.avg_bert_corrected],
-                backgroundColor: 'rgba(34, 197, 94, 0.7)',
-                borderColor: 'rgba(34, 197, 94, 1)',
-                borderWidth: 1
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: 'Score (%)' } } },
-            plugins: {
-              legend: { position: 'top' },
-              title: { display: true, text: 'Comparação de Métricas Antes e Após Correção' }
-            }
-          }
-        });
-      }
-    });
-  </script>
-</body>
-</html>
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}
