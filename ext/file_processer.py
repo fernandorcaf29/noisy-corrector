@@ -41,15 +41,6 @@ class FileProcesser:
 
         return paragraphs, content
 
-    def read_json_and_extract_text(self, filepath):
-        with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        if not isinstance(data, list):
-            raise ValueError("JSON data should be an array of objects")
-
-        return " ".join(item["text"] for item in data if "text" in item)
-
     def save_file(self, file):
         filename = secure_filename(file.filename)
 

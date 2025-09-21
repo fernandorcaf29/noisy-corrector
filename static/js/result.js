@@ -62,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const totalPages = Math.max(1, currentRedlines.length);
       const currentPageNumber = Math.min(currentPage, totalPages - 1);
-
       if (currentPage !== currentPageNumber) {
         currentPage = currentPageNumber;
       }

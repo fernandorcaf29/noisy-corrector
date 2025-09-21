@@ -2,6 +2,7 @@ from mistralai.client import MistralClient as MistralAIClient
 from mistralai.models.chat_completion import ChatMessage
 from prompts import prompt_model_map
 from .ai_client import AIClient
+from flask import abort
 
 
 class MistralClient(AIClient):
@@ -18,4 +19,4 @@ class MistralClient(AIClient):
             return chat_response.choices[0].message.content
         except Exception as e:
             print(e)
-            raise ValueError(f"Erro ao processar a mensagem: {str(e)}")
+            abort(500)

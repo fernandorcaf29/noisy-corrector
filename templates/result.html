@@ -1,8 +1,8 @@
 {% extends "logo-box.html" %} {% block content %}
 <script>
-  let currentFileContent = '{{ file_content | tojson | safe }}';
-  let currentFilename = '{{ filename | tojson | safe }}';
-  let currentRedlines = '{{ redlines | tojson | safe }}';
+  let currentFileContent = {{ file_content | tojson | safe }};
+  let currentFilename = {{ filename | tojson | safe }};
+  let currentRedlines = {{ redlines | tojson | safe }};
 </script>
 <script src="{{ url_for('static', filename='js/result.js') }}"></script>
 <link
