@@ -1,6 +1,5 @@
 import nltk
 from bert_score import score
-import numpy as np
 
 nltk.download('punkt_tab')
 
@@ -17,7 +16,13 @@ def calculate_bert_score(references, hypotheses):
         if isinstance(hypotheses, str):
             hypotheses = [hypotheses]
 
-        P, R, F1 = score(hypotheses, references, lang='pt', model_type='xlm-roberta-base')
+        # Forçar CPU e modelo mais leve se necessário
+        P, R, F1 = score(
+            hypotheses, references, 
+            lang='pt', 
+            model_type='xlm-roberta-base',
+            device='cpu'
+        )
         return F1.mean().item()
     except Exception as e:
         print(f"Error calculating BERTScore: {e}")
