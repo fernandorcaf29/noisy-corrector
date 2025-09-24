@@ -16,7 +16,6 @@ def calculate_bert_score(references, hypotheses):
         if isinstance(hypotheses, str):
             hypotheses = [hypotheses]
 
-        # Forçar CPU e modelo mais leve se necessário
         P, R, F1 = score(
             hypotheses, references, 
             lang='pt', 
