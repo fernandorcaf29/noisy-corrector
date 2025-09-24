@@ -70,7 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
       prevBtn.disabled = currentPage <= 0;
       nextBtn.disabled = currentPage >= totalPages - 1;
       showCurrentPage();
-    } finally { isUpdating = false; }
+    } finally { 
+      isUpdating = false; 
+    }
   };
 
   prevBtn?.addEventListener('click', e => { 
@@ -98,15 +100,19 @@ document.addEventListener('DOMContentLoaded', () => {
   closeSummaryBtn?.addEventListener('click', () => summaryModal.classList.add('hidden'));
 
   const displaySummary = () => {
+    if (!metrics || metrics.length === 0) {
+      summaryStats.innerHTML = '<div class="col-span-2 text-center text-gray-500">No metrics available</div>';
+      return;
+    }
+
     const totalLines = metrics.length;
-    const avg_bleu_improvement = Math.round(metrics.reduce((a,m)=>a+(m.bleu_diff||0),0) /totalLines * 100) / 100;
-    const avg_bert_improvement = Math.round(metrics.reduce((a,m)=>a+(m.bert_diff||0),0) / totalLines * 100) / 100;
+    const avg_bleu_improvement = Math.round(metrics.reduce((a, m) => a + (m.bleu_diff || 0), 0) / totalLines * 100) / 100;
+    const avg_bert_improvement = Math.round(metrics.reduce((a, m) => a + (m.bert_diff || 0), 0) / totalLines * 100) / 100;
 
-    const avg_bleu_original = Math.round(metrics.reduce((a,m)=>a+(m.bleu_original||0),0) / totalLines * 100) / 100;
-    const avg_bert_original = Math.round(metrics.reduce((a,m)=>a+(m.bert_original||0),0) / totalLines * 100) / 100;
-    const avg_bleu_corrected = Math.round(metrics.reduce((a,m)=>a+(m.bleu_corrected||0),0) / totalLines * 100) / 100;
-    const avg_bert_corrected = Math.round(metrics.reduce((a,m)=>a+(m.bert_corrected||0),0) / totalLines * 100) / 100;
-
+    const avg_bleu_original = Math.round(metrics.reduce((a, m) => a + (m.bleu_original || 0), 0) / totalLines * 100) / 100;
+    const avg_bert_original = Math.round(metrics.reduce((a, m) => a + (m.bert_original || 0), 0) / totalLines * 100) / 100;
+    const avg_bleu_corrected = Math.round(metrics.reduce((a, m) => a + (m.bleu_corrected || 0), 0) / totalLines * 100) / 100;
+    const avg_bert_corrected = Math.round(metrics.reduce((a, m) => a + (m.bert_corrected || 0), 0) / totalLines * 100) / 100;
 
     summaryStats.innerHTML = `
       <div class="text-center p-4 bg-blue-50 rounded-lg">
@@ -126,22 +132,54 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="text-sm text-orange-800">Lexic Improvement</div>
       </div>
     `;
-    createChart({avg_bleu_original, avg_bert_original, avg_bleu_corrected, avg_bert_corrected});
+    
+    createChart({
+      avg_bleu_original, 
+      avg_bert_original, 
+      avg_bleu_corrected, 
+      avg_bert_corrected
+    });
   };
 
   const createChart = (summary) => {
     const ctx = document.getElementById('metricsChart').getContext('2d');
     if (metricsChart) metricsChart.destroy();
+    
     metricsChart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: ['Semantic Score', 'Lexic Score'],
         datasets: [
-          { label:'Before Correction', data:[summary.avg_bleu_original, summary.avg_bert_original], backgroundColor:'rgba(239,68,68,0.7)', borderColor:'rgba(239,68,68,1)', borderWidth:1 },
-          { label:'After Correction', data:[summary.avg_bleu_corrected, summary.avg_bert_corrected], backgroundColor:'rgba(34,197,94,0.7)', borderColor:'rgba(34,197,94,1)', borderWidth:1 }
+          { 
+            label: 'Transcription', 
+            data: [summary.avg_bleu_original, summary.avg_bert_original], 
+            backgroundColor: 'rgba(239,68,68,0.7)', 
+            borderColor: 'rgba(239,68,68,1)', 
+            borderWidth: 1 
+          },
+          { 
+            label: 'Corrected', 
+            data: [summary.avg_bleu_corrected, summary.avg_bert_corrected], 
+            backgroundColor: 'rgba(34,197,94,0.7)', 
+            borderColor: 'rgba(34,197,94,1)', 
+            borderWidth: 1 
+          }
         ]
       },
-      options: { responsive:true, scales:{y:{beginAtZero:true, max:100, title:{display:true,text:'Score (%)'}}}, plugins:{legend:{position:'top'}, title:{display:true,text:'Comparison of Metrics Before and After Correction'}} }
+      options: { 
+        responsive: true, 
+        scales: { 
+          y: { 
+            beginAtZero: true, 
+            max: 100, 
+            title: { display: true, text: 'Score (%)' } 
+          } 
+        }, 
+        plugins: { 
+          legend: { position: 'top' }, 
+          title: { display: true, text: 'Transcription vs Corrected Metrics Comparison' } 
+        } 
+      }
     });
   };
 
