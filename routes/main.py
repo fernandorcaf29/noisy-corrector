@@ -130,29 +130,38 @@ def process_evaluation():
     file_processer = current_app.extensions["file_processer"]
     diff_generator = current_app.extensions["diff_generator"]
 
-    ref_files = file_processer.process(reference_file, client, model)
+    ref_file = file_processer.validate_file(reference_file)
+    filepath, filename = file_processer.save_file(ref_file)
+    reference_lines, content = file_processer.read_txt_paragraphs(filepath)
+    
     test_files = file_processer.process(test_file, client, model)
 
-    diff = diff_generator.generate_diff(
-        ref_files["output_file"]["paragraphs"],
+    diff_trans = diff_generator.generate_diff(
+        reference_lines,
+        test_files["input_file"]["paragraphs"]
+    )
+
+    diff_corr = diff_generator.generate_diff(
+        reference_lines,
         test_files["output_file"]["paragraphs"]
     )
 
-    reference_lines = ref_files["output_file"]["paragraphs"]
-    test_lines = test_files["output_file"]["paragraphs"]
+    trans_lines = test_files["input_file"]["paragraphs"]
+    corr_lines = test_files["output_file"]["paragraphs"]
 
     results_metrics = []
-    for idx, (ref_line, test_line) in enumerate(zip(reference_lines, test_lines), start=1):
+    for idx, (ref_line, corr_line, trans_line) in enumerate(zip(reference_lines, corr_lines, trans_lines), start=1):
         ref_line_clean = ref_line.strip()
-        test_line_clean = test_line.strip()
-        if not ref_line_clean or not test_line_clean:
+        corr_line_clean = corr_line.strip()
+        trans_line_clean = trans_line.strip()
+        if not ref_line_clean or not corr_line_clean or not trans_line_clean:
             continue
         try:
-            bleu_original = calculate_bleu(ref_line_clean, ref_line_clean)
-            bert_original = calculate_bert_score(ref_line_clean, ref_line_clean)
+            bleu_original = calculate_bleu(ref_line_clean, trans_line_clean)
+            bert_original = calculate_bert_score(ref_line_clean, trans_line_clean)
 
-            bleu_corrected = calculate_bleu(ref_line_clean, test_line_clean)
-            bert_corrected = calculate_bert_score(ref_line_clean, test_line_clean)
+            bleu_corrected = calculate_bleu(ref_line_clean, corr_line_clean)
+            bert_corrected = calculate_bert_score(ref_line_clean, corr_line_clean)
 
             results_metrics.append({
                 'index': idx,
@@ -176,9 +185,8 @@ def process_evaluation():
 
     return render_template(
         "evaluation.html",
-        redlines=diff,
+        trans_redlines=diff_trans,
+        corr_redlines=diff_corr,
         reference_lines=reference_lines,
-        file_content=test_files["output_file"]["content"],
-        filename=test_files["output_file"]["filename"],
         metrics=results_metrics
     )

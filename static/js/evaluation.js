@@ -1,7 +1,7 @@
 let metricsChart = null;
 document.addEventListener('DOMContentLoaded', () => {
-  const diffContainer = document.getElementById('diff-container');
-  const referenceContainer = document.getElementById('reference-container');
+  const transcriptionDiffContainer = document.getElementById('transcription-diff-container');
+  const correctedDiffContainer = document.getElementById('corrected-diff-container');
   const resultsList = document.getElementById('resultsList');
   const prevBtn = document.getElementById('prev-btn');
   const nextBtn = document.getElementById('next-btn');
@@ -15,21 +15,25 @@ document.addEventListener('DOMContentLoaded', () => {
   let isUpdating = false;
 
   const showCurrentPage = () => {
-    if (!diffContainer || !referenceContainer || !resultsList) return;
 
-    if (!currentRedlines || currentRedlines.length === 0) {
-      diffContainer.innerHTML = '<div class="text-gray-500 text-center py-8">No text to display.</div>';
-      referenceContainer.innerHTML = '';
+    if (!transcriptionDiffContainer || !correctedDiffContainer || !resultsList) return;
+
+    const currentRedlines = transcriptionRedlines || [];
+    
+    if (currentRedlines.length === 0) {
+      transcriptionDiffContainer.innerHTML = '<div class="text-gray-500 text-center py-8">No text to display.</div>';
+      correctedDiffContainer.innerHTML = '<div class="text-gray-500 text-center py-8">No text to display.</div>';
       resultsList.innerHTML = '';
       return;
     }
 
     const index = Math.max(0, Math.min(currentPage, currentRedlines.length - 1));
-    const redline = currentRedlines[index];
-    diffContainer.innerHTML = `<div class="prose"><div class="p-2 bg-white rounded border border-gray-200 h-[200px] overflow-y-auto">${marked.parse(redline.markdown_diff || '')}</div></div>`;
+    
+    const transRedline = transcriptionRedlines?.[index] || {};
+    transcriptionDiffContainer.innerHTML = `<div class="prose"><div class="p-2 bg-white rounded border border-gray-200 h-full overflow-y-auto">${marked.parse(transRedline.markdown_diff || 'No differences found')}</div></div>`;
 
-    const referenceLine = referenceLines?.[index] || '';
-    referenceContainer.innerHTML = `<div class="prose"><div class="p-2 bg-white rounded border border-gray-200 h-[200px] overflow-y-auto">${marked.parse(referenceLine)}</div></div>`;
+    const corrRedline = correctedRedlines?.[index] || {};
+    correctedDiffContainer.innerHTML = `<div class="prose"><div class="p-2 bg-white rounded border border-gray-200 h-full overflow-y-auto">${marked.parse(corrRedline.markdown_diff || 'No differences found')}</div></div>`;
 
     const result = metrics?.[index] || null;
     if (result) {
@@ -47,17 +51,19 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
       </div>`;
-    } else resultsList.innerHTML = '';
-
-    diffContainer.scrollTo?.({ top: 0, behavior: 'smooth' });
-    referenceContainer.scrollTo?.({ top: 0, behavior: 'smooth' });
+    } else {
+      resultsList.innerHTML = '';
+    }
+    
+    transcriptionDiffContainer.scrollTo?.({ top: 0, behavior: 'smooth' });
+    correctedDiffContainer.scrollTo?.({ top: 0, behavior: 'smooth' });
   };
 
   const updatePagination = () => {
     if (isUpdating) return;
     isUpdating = true;
     try {
-      if (!pageInfo || !currentRedlines) return;
+      const currentRedlines = transcriptionRedlines || [];
       const totalPages = Math.max(1, currentRedlines.length);
       currentPage = Math.min(currentPage, totalPages - 1);
       pageInfo.textContent = `${currentPage + 1}/${totalPages}`;
@@ -67,10 +73,28 @@ document.addEventListener('DOMContentLoaded', () => {
     } finally { isUpdating = false; }
   };
 
-  prevBtn?.addEventListener('click', e => { e.preventDefault(); if (currentPage>0) {currentPage--; updatePagination();} });
-  nextBtn?.addEventListener('click', e => { e.preventDefault(); if (currentPage<currentRedlines.length-1){currentPage++;updatePagination();} });
+  prevBtn?.addEventListener('click', e => { 
+    e.preventDefault(); 
+    if (currentPage > 0) {
+      currentPage--; 
+      updatePagination();
+    } 
+  });
+  
+  nextBtn?.addEventListener('click', e => { 
+    e.preventDefault(); 
+    const currentRedlines = transcriptionRedlines || [];
+    if (currentPage < currentRedlines.length - 1) {
+      currentPage++; 
+      updatePagination();
+    } 
+  });
 
-  showSummaryBtn?.addEventListener('click', () => { displaySummary(); summaryModal.classList.remove('hidden'); });
+  showSummaryBtn?.addEventListener('click', () => { 
+    displaySummary(); 
+    summaryModal.classList.remove('hidden'); 
+  });
+  
   closeSummaryBtn?.addEventListener('click', () => summaryModal.classList.add('hidden'));
 
   const displaySummary = () => {

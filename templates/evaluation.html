@@ -2,9 +2,8 @@
 
 {% block content %}
 <script>
-  let currentFileContent = {{ file_content | tojson | safe }};
-  let currentFilename = {{ filename | tojson | safe }};
-  let currentRedlines = {{ redlines | tojson | safe }};
+  let correctedRedlines = {{ corr_redlines | tojson | safe }};
+  let transcriptionRedlines = {{ trans_redlines | tojson | safe }};
   let referenceLines = {{ reference_lines | tojson | safe }};
   let metrics = {{ metrics | tojson | safe }};
 </script>
@@ -15,7 +14,6 @@
 
 <div id="evaluation-section" class="flex flex-col gap-4">
   <div class="flex justify-between items-center mb-1">
-    <h2 class="text-lg font-bold text-gray-800">Reference line</h2>
     <div class="flex items-center space-x-2">
       <button id="prev-btn" class="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50" disabled>
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -31,10 +29,18 @@
     </div>
   </div>
 
-  <div id="reference-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto"></div>
-  <h2 class="text-lg font-bold text-gray-800">Review changes</h2>
-  <div id="diff-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto"></div>
-  <div id="resultsList" class="space-y-4"></div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div>
+      <h2 class="text-lg font-bold text-gray-800 mb-2">Original vs Transcription</h2>
+      <div id="transcription-diff-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto h-[200px]"></div>
+    </div>
+    <div>
+      <h2 class="text-lg font-bold text-gray-800 mb-2">Original vs Corrected</h2>
+      <div id="corrected-diff-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto h-[200px]"></div>
+    </div>
+  </div>
+
+  <div id="resultsList" class="space-y-4 mt-4"></div>
 
   <button 
     id="show-summary-btn" 
