@@ -42,12 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="text-center p-2 bg-gray-50 rounded">
             <div class="font-semibold">Semantic Score</div>
             <div class="text-2xl font-bold ${result.bleu_diff > 0 ? 'text-green-600' : 'text-red-600'}">${result.bleu_corrected.toFixed(1)}%</div>
-            <div class="text-xs text-gray-600">${result.bleu_original.toFixed(1)}% → <span class="${result.bleu_diff > 0 ? 'text-green-600' : 'text-red-600'}">${result.bleu_diff > 0 ? '+' : ''}${result.bleu_diff.toFixed(1)}%</span></div>
+            <div class="text-xs text-gray-600">Improvement -> <span class="${result.bleu_diff > 0 ? 'text-green-600' : 'text-red-600'}">${result.bleu_diff > 0 ? '+' : ''}${result.bleu_diff.toFixed(1)}%</span></div>
           </div>
           <div class="text-center p-2 bg-gray-50 rounded">
             <div class="font-semibold">Lexic Score</div>
             <div class="text-2xl font-bold ${result.bert_diff > 0 ? 'text-green-600' : 'text-red-600'}">${result.bert_corrected.toFixed(1)}%</div>
-            <div class="text-xs text-gray-600">${result.bert_original.toFixed(1)}% → <span class="${result.bert_diff > 0 ? 'text-green-600' : 'text-red-600'}">${result.bert_diff > 0 ? '+' : ''}${result.bert_diff.toFixed(1)}%</span></div>
+            <div class="text-xs text-gray-600">Improvement -> <span class="${result.bert_diff > 0 ? 'text-green-600' : 'text-red-600'}">${result.bert_diff > 0 ? '+' : ''}${result.bert_diff.toFixed(1)}%</span></div>
           </div>
         </div>
       </div>`;
@@ -115,21 +115,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const avg_bert_corrected = Math.round(metrics.reduce((a, m) => a + (m.bert_corrected || 0), 0) / totalLines * 100) / 100;
 
     summaryStats.innerHTML = `
-      <div class="text-center p-4 bg-blue-50 rounded-lg">
-        <div class="text-2xl font-bold text-blue-600">${avg_bleu_corrected}</div>
-        <div class="text-sm text-blue-800">Semantic Score</div>
+      <div class="text-center p-4 ${avg_bleu_corrected >= avg_bleu_original ? 'bg-green-50' : 'bg-red-50'} rounded-lg">
+        <div class="text-2xl font-bold ${avg_bleu_corrected >= avg_bleu_original ? 'text-green-600' : 'text-red-600'}">${avg_bleu_corrected.toFixed(1)}%</div>
+        <div class="text-sm ${avg_bleu_corrected >= avg_bleu_original ? 'text-green-800' : 'text-red-800'}">Semantic Score</div>
       </div>
-      <div class="text-center p-4 bg-green-50 rounded-lg">
-        <div class="text-2xl font-bold text-green-600">${avg_bert_corrected}</div>
-        <div class="text-sm text-green-800">Lexic Score</div>
+      <div class="text-center p-4 ${avg_bert_corrected >= avg_bert_original ? 'bg-green-50' : 'bg-red-50'} rounded-lg">
+        <div class="text-2xl font-bold ${avg_bert_corrected >= avg_bert_original ? 'text-green-600' : 'text-red-600'}">${avg_bert_corrected.toFixed(1)}%</div>
+        <div class="text-sm ${avg_bert_corrected >= avg_bert_original ? 'text-green-800' : 'text-red-800'}">Lexic Score</div>
       </div>
-      <div class="text-center p-4 bg-purple-50 rounded-lg">
-        <div class="text-2xl font-bold text-purple-600">${avg_bleu_improvement.toFixed(2)}%</div>
-        <div class="text-sm text-purple-800">Semantic Improvement</div>
+      <div class="text-center p-4 ${avg_bleu_improvement >= 0 ? 'bg-green-50' : 'bg-red-50'} rounded-lg">
+        <div class="text-2xl font-bold ${avg_bleu_improvement >= 0 ? 'text-green-600' : 'text-red-600'}">${avg_bleu_improvement > 0 ? '+' : ''}${avg_bleu_improvement.toFixed(1)}%</div>
+        <div class="text-sm ${avg_bleu_improvement >= 0 ? 'text-green-800' : 'text-red-800'}">Semantic Improvement</div>
       </div>
-      <div class="text-center p-4 bg-orange-50 rounded-lg">
-        <div class="text-2xl font-bold text-orange-600">${avg_bert_improvement.toFixed(2)}%</div>
-        <div class="text-sm text-orange-800">Lexic Improvement</div>
+      <div class="text-center p-4 ${avg_bert_improvement >= 0 ? 'bg-green-50' : 'bg-red-50'} rounded-lg">
+        <div class="text-2xl font-bold ${avg_bert_improvement >= 0 ? 'text-green-600' : 'text-red-600'}">${avg_bert_improvement > 0 ? '+' : ''}${avg_bert_improvement.toFixed(1)}%</div>
+        <div class="text-sm ${avg_bert_improvement >= 0 ? 'text-green-800' : 'text-red-800'}">Lexic Improvement</div>
       </div>
     `;
     
