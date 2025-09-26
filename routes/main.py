@@ -1,3 +1,5 @@
+import json
+import os
 from flask import Blueprint, render_template, request, abort, current_app
 from aiClients.ai_client_factory import AIClientFactory
 from services.metrics import calculate_bert_score, calculate_bleu
@@ -189,4 +191,62 @@ def process_evaluation():
         corr_redlines=diff_corr,
         reference_lines=reference_lines,
         metrics=results_metrics
+    )
+
+@bp.route('/demo')
+def demo():
+    
+    demo_dir = os.path.join(current_app.root_path, 'demo_data')
+    reference_path = os.path.join(demo_dir, 'reference.txt')
+    transcription_path = os.path.join(demo_dir, 'transcription.txt')
+    corrected_path = os.path.join(demo_dir, 'corrected.txt')
+    json_path = os.path.join(demo_dir, 'results_metrics.json')
+    
+    def read_demo_file(filepath):
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return [line.strip() for line in f.readlines() if line.strip()]
+    
+    demo_data = {
+        'reference_lines': read_demo_file(reference_path),
+        'transcription_lines': read_demo_file(transcription_path),
+        'corrected_lines': read_demo_file(corrected_path)
+    }
+    
+    min_length = min(len(demo_data['reference_lines']), 
+                    len(demo_data['transcription_lines']), 
+                    len(demo_data['corrected_lines']))
+    
+    demo_data['reference_lines'] = demo_data['reference_lines'][:min_length]
+    demo_data['transcription_lines'] = demo_data['transcription_lines'][:min_length]
+    demo_data['corrected_lines'] = demo_data['corrected_lines'][:min_length]
+    
+    diff_generator = current_app.extensions["diff_generator"]
+    
+    diff_trans = diff_generator.generate_diff(
+        demo_data['reference_lines'],
+        demo_data['transcription_lines']
+    )
+
+    diff_corr = diff_generator.generate_diff(
+        demo_data['reference_lines'],
+        demo_data['corrected_lines']
+    )
+
+    try:
+        with open(json_path, 'r', encoding='utf-8') as f:
+            results_metrics = json.load(f)
+    except FileNotFoundError:
+        results_metrics = []
+        print("Arquivo result_metrics.json não encontrado")
+    except Exception as e:
+        results_metrics = []
+        print(f"Erro ao carregar JSON: {e}")
+
+    return render_template(
+        "evaluation.html",
+        trans_redlines=diff_trans,
+        corr_redlines=diff_corr,
+        reference_lines=demo_data['reference_lines'],
+        metrics=results_metrics,
+        is_demo=True
     )

@@ -1,5 +1,5 @@
 {% extends "base.html" %} {% block main %}
-<div class="container mx-auto max-w-xl py-8">
+<div class="container mx-auto {% block container_width %}max-w-xl{% endblock %} py-8">
   <div>
     <a href="{{ url_for('main.home') }}">
       <div class="flex items-center justify-center gap-2 mb-2">

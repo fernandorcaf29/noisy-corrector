@@ -1,5 +1,7 @@
 {% extends "logo-box.html" %}
 
+{% block container_width %}max-w-6xl{% endblock %}
+
 {% block content %}
 <script>
   let correctedRedlines = {{ corr_redlines | tojson | safe }};
