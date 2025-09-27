@@ -1,5 +1,7 @@
 let metricsChart = null;
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Get all necessary DOM elements
   const transcriptionDiffContainer = document.getElementById('transcription-diff-container');
   const correctedDiffContainer = document.getElementById('corrected-diff-container');
   const resultsList = document.getElementById('resultsList');
@@ -10,47 +12,104 @@ document.addEventListener('DOMContentLoaded', () => {
   const summaryModal = document.getElementById('summary-modal');
   const closeSummaryBtn = document.getElementById('close-summary-btn');
   const summaryStats = document.getElementById('summaryStats');
+  const tabButtons = document.querySelectorAll('.tab-button');
+  const tabContents = document.querySelectorAll('.tab-content');
 
   let currentPage = 0;
   let isUpdating = false;
 
-  const showCurrentPage = () => {
+  // Tab switching functionality
+  const switchTab = (tabId) => {
+    // Update active tab styling
+    tabButtons.forEach(btn => {
+      if (btn.getAttribute('data-tab') === tabId) {
+        btn.classList.add('border-indigo-600', 'text-indigo-600');
+        btn.classList.remove('border-transparent');
+      } else {
+        btn.classList.remove('border-indigo-600', 'text-indigo-600');
+        btn.classList.add('border-transparent');
+      }
+    });
+    
+    // Show/hide tab content
+    tabContents.forEach(content => {
+      if (content.id === `${tabId}-tab-content`) {
+        content.classList.remove('hidden');
+      } else {
+        content.classList.add('hidden');
+      }
+    });
+  };
 
-    if (!transcriptionDiffContainer || !correctedDiffContainer || !resultsList) return;
+  // Initialize tabs
+  if (tabButtons.length > 0) {
+    tabButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tabId = button.getAttribute('data-tab');
+        switchTab(tabId);
+      });
+    });
+    
+    // Set first tab as active by default
+    switchTab('transcription');
+  }
+
+  const showCurrentPage = () => {
+    const transcriptionScores = document.getElementById('transcription-scores');
+    const correctedScores = document.getElementById('corrected-scores');
+    
+    if (!transcriptionDiffContainer || !correctedDiffContainer || !transcriptionScores || !correctedScores) return;
 
     const currentRedlines = transcriptionRedlines || [];
     
     if (currentRedlines.length === 0) {
       transcriptionDiffContainer.innerHTML = '<div class="text-gray-500 text-center py-8">No text to display.</div>';
       correctedDiffContainer.innerHTML = '<div class="text-gray-500 text-center py-8">No text to display.</div>';
-      resultsList.innerHTML = '';
+      transcriptionScores.innerHTML = '';
+      correctedScores.innerHTML = '';
       return;
     }
 
     const index = Math.max(0, Math.min(currentPage, currentRedlines.length - 1));
     
+    // Update transcription diff
     const transRedline = transcriptionRedlines?.[index] || {};
-    transcriptionDiffContainer.innerHTML = `<div class="prose"><div class="p-2 bg-white rounded border border-gray-200 h-full overflow-y-auto">${marked.parse(transRedline.markdown_diff || 'No differences found')}</div></div>`;
+    transcriptionDiffContainer.innerHTML = `<div class="prose"><div class="p-2 bg-white rounded border border-gray-200 h-[200px] overflow-y-auto">${marked.parse(transRedline.markdown_diff || 'No differences found')}</div></div>`;
 
+    // Update corrected diff
     const corrRedline = correctedRedlines?.[index] || {};
-    correctedDiffContainer.innerHTML = `<div class="prose"><div class="p-2 bg-white rounded border border-gray-200 h-full overflow-y-auto">${marked.parse(corrRedline.markdown_diff || 'No differences found')}</div></div>`;
+    correctedDiffContainer.innerHTML = `<div class="prose"><div class="p-2 bg-white rounded border border-gray-200 h-[200px] overflow-y-auto">${marked.parse(corrRedline.markdown_diff || 'No differences found')}</div></div>`;
 
     const result = metrics?.[index] || null;
     if (result) {
-      resultsList.innerHTML = `<div class="border rounded-lg p-4 mb-4 ${result.error ? 'bg-red-50 border-red-200' : 'bg-white'}">
+      transcriptionScores.innerHTML = `
         <div class="grid grid-cols-2 gap-4 text-sm">
           <div class="text-center p-2 bg-gray-50 rounded">
-            <div class="font-semibold">Semantic Score</div>
-            <div class="text-2xl font-bold ${result.bleu_diff >= 0 ? 'text-green-600' : 'text-red-600'}">${result.bleu_corrected.toFixed(1)}%</div>
-            <div class="text-xs text-gray-600">Improvement -> <span class="${result.bleu_diff >= 0 ? 'text-green-600' : 'text-red-600'}">${result.bleu_diff > 0 ? '+' : ''}${result.bleu_diff.toFixed(1)}%</span></div>
+            <div class="font-semibold">Semantical Score</div>
+            <div class="text-2xl font-semibold text-black/90">${result.bleu_original.toFixed(1)}%</div>
           </div>
           <div class="text-center p-2 bg-gray-50 rounded">
-            <div class="font-semibold">Lexic Score</div>
-            <div class="text-2xl font-bold ${result.bert_diff >= 0 ? 'text-green-600' : 'text-red-600'}">${result.bert_corrected.toFixed(1)}%</div>
-            <div class="text-xs text-gray-600">Improvement -> <span class="${result.bert_diff >= 0 ? 'text-green-600' : 'text-red-600'}">${result.bert_diff > 0 ? '+' : ''}${result.bert_diff.toFixed(1)}%</span></div>
+            <div class="font-semibold">Lexical Score</div>
+            <div class="text-2xl font-semibold text-black/90">${result.bert_original.toFixed(1)}%</div>
           </div>
         </div>
-      </div>`;
+      `;
+      
+      correctedScores.innerHTML = `
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div class="text-center p-2 bg-gray-50 rounded">
+            <div class="font-semibold">Semantical Score</div>
+            <div class="text-2xl font-semibold ${result.bleu_diff >= 0 ? 'text-green-600' : 'text-red-600'}">${result.bleu_corrected.toFixed(1)}%</div>
+            <div class="text-xs text-gray-600">Improvement: <span class="${result.bleu_diff >= 0 ? 'text-green-600' : 'text-red-600'}">${result.bleu_diff > 0 ? '+' : ''}${result.bleu_diff.toFixed(1)}%</span></div>
+          </div>
+          <div class="text-center p-2 bg-gray-50 rounded">
+            <div class="font-semibold">Lexical Score</div>
+            <div class="text-2xl font-semibold ${result.bert_diff >= 0 ? 'text-green-600' : 'text-red-600'}">${result.bert_corrected.toFixed(1)}%</div>
+            <div class="text-xs text-gray-600">Improvement: <span class="${result.bert_diff >= 0 ? 'text-green-600' : 'text-red-600'}">${result.bert_diff > 0 ? '+' : ''}${result.bert_diff.toFixed(1)}%</span></div>
+          </div>
+        </div>
+      `;
     } else {
       resultsList.innerHTML = '';
     }

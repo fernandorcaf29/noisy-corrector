@@ -1,7 +1,7 @@
 import json
 import os
 from flask import Blueprint, render_template, request, abort, current_app
-from aiClients.ai_client_factory import AIClientFactory
+from ai_clients.ai_client_factory import AIClientFactory
 from services.metrics import calculate_bert_score, calculate_bleu
 bp = Blueprint("main", __name__)
 
@@ -43,11 +43,11 @@ def result():
     diff_generator = current_app.extensions["diff_generator"]
 
     files = file_processer.process(file, client, model)
-
+    
     diff = diff_generator.generate_diff(
         files["input_file"]["paragraphs"], files["output_file"]["paragraphs"]
     )
-    print("diff", diff)
+
     return render_template(
         "result.html",
         redlines=diff,

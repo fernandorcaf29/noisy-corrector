@@ -14,14 +14,16 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/result.css') }}" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<div id="evaluation-section" class="flex flex-col gap-4">
-  <div class="flex justify-between items-center mb-1">
-    <div class="flex items-center space-x-2">
+<div id="evaluation-section" class="flex flex-col">
+  <div class="flex justify-between items-center">
+    <h2 class="text-lg font-bold text-gray-800">Evaluate changes</h2>
+    <div class="flex items-center">
       <button id="prev-btn" class="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50" disabled>
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
         </svg>
       </button>
+      
       <span id="page-info" class="text-sm text-gray-600">1/1</span>
       <button id="next-btn" class="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50" disabled>
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -31,24 +33,42 @@
     </div>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <div>
-      <h2 class="text-lg font-bold text-gray-800 mb-2">Original vs Transcription</h2>
-      <div id="transcription-diff-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto h-[200px]"></div>
+  <div>
+    <div class="flex border-b border-gray-200 mb-3">
+      <button 
+        id="transcription-tab" 
+        class="px-4 py-2 font-medium text-sm border-b-2 border-transparent hover:text-indigo-600 hover:border-indigo-500 focus:outline-none focus:border-indigo-500 transition-colors duration-200 tab-button active"
+        data-tab="transcription"
+      >
+        Original vs Raw 
+      </button>
+      <button 
+        id="corrected-tab" 
+        class="px-4 py-2 font-medium text-sm border-b-2 border-transparent hover:text-indigo-600 hover:border-indigo-500 focus:outline-none focus:border-indigo-500 transition-colors duration-200 tab-button"
+        data-tab="corrected"
+      >
+        Original vs Corrected
+      </button>
     </div>
-    <div>
-      <h2 class="text-lg font-bold text-gray-800 mb-2">Original vs Corrected</h2>
-      <div id="corrected-diff-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200 overflow-y-auto h-[200px]"></div>
+    
+    <div id="transcription-tab-content" class="tab-content">
+      <div class="space-y-4">
+        <div id="transcription-diff-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200"></div>
+        <div id="transcription-scores" class="p-2 bg-white rounded-lg border border-gray-200"></div>
+      </div>
+    </div>
+    <div id="corrected-tab-content" class="tab-content hidden">
+      <div class="space-y-4">
+        <div id="corrected-diff-container" class="p-4 bg-gray-50 rounded-lg border border-gray-200"></div>
+        <div id="corrected-scores" class="p-2 bg-white rounded-lg border border-gray-200"></div>
+      </div>
     </div>
   </div>
 
-  <div id="resultsList" class="space-y-4 mt-4"></div>
-
   <button 
-    id="show-summary-btn" 
     class="mt-4 self-start flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
     >
-      View Summary
+      View General Scores
   </button>
 </div>
 
