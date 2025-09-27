@@ -193,9 +193,8 @@ def process_evaluation():
         metrics=results_metrics
     )
 
-@bp.route('/demo')
+@bp.route('/demo', methods=['GET'])
 def demo():
-    
     demo_dir = os.path.join(current_app.root_path, 'demo_data')
     reference_path = os.path.join(demo_dir, 'reference.txt')
     transcription_path = os.path.join(demo_dir, 'transcription.txt')

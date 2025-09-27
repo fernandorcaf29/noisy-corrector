@@ -14,9 +14,9 @@
   </head>
   <body class="bg-gray-100 min-h-screen">
     <header class="flex justify-between py-4 px-8 items-center">
-      <div class="{{ 'invisible' if request.path == '/' or request.path == '/playground' else '' }}">
+      <div class="{{ 'invisible' if request.path == '/' or request.path == '/playground' or request.path == '/process_evaluation' else '' }}">
         <a href="{{ url_for('main.home') }}">
-          <div class="flex items-center justify-center gap-2 mb-2">
+          <div class="flex items-center justify-center gap-1 mb-2">
             <h1 class="text-2xl font-bold text-gray-800">noisy corrector.</h1>
             <img
               src="{{ url_for('static', filename='svg/frequency-gray.svg') }}"
@@ -31,6 +31,11 @@
           class="text-gray-800 hover:text-gray-600 text-lg px-2"
           href="{{ url_for('main.playground') }}"
           >Playground</a
+        >
+        <a
+        class="text-gray-800 hover:text-gray-600 text-lg px-2"
+        href="{{ url_for('main.demo') }}"
+        >Evaluate</a
         >
         <a
           class="text-gray-800 hover:text-gray-600 text-lg px-2"

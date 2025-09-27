@@ -1,17 +1,11 @@
-{% extends "logo-box.html" %} {% block content %}
-<form
-  id="correctionForm"
-  action="{{ url_for('main.result') }}"
-  method="POST"
-  enctype="multipart/form-data"
->
-  <div class="mb-6 flex flex-col gap-6">
-    <div>
-      <label
-        class="block text-gray-700 text-sm font-bold mb-2 text-center"
-        for="document"
-      >
-        Choose a text file (.txt)
+{% extends "logo-box.html" %}
+
+{% block content %}
+<form id="correctionForm" action="{{ url_for('main.result') }}" method="POST" enctype="multipart/form-data">
+  <div id="step1" class="step">
+    <div class="mb-6">
+      <label class="block text-gray-700 text-sm font-bold mb-2 text-center" for="document">
+        Upload Transcription File (.txt)
       </label>
       <input
         type="file"
@@ -22,59 +16,69 @@
         required
       />
     </div>
-    <div class="flex gap-2">
-      <select
-        name="model"
-        required
-        id="model"
-        class="px-3 py-2 w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+    <div class="flex justify-end">
+      <button 
+        type="button" 
+        id="nextBtn" 
+        class="px-4 py-2 bg-indigo-600 w-full text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled
       >
-        <option value="">Select a model</option>
-        <option value="mistral-large-latest">
-          mistral-large-latest (Recommended)
-        </option>
-        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-      </select>
-      <input
-        type="password"
-        name="api_key"
-        required
-        id="api_key"
-        placeholder="API Key"
-        class="px-3 py-2 w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-      />
+        Proceed
+      </button>
     </div>
   </div>
-  <button
-    type="submit"
-    id="submitBtn"
-    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-  >
-    <span id="buttonText">Correct transcription</span>
-    <span id="buttonSpinner" class="flex gap-2 items-center hidden">
-      <svg
-        class="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
+
+  <div id="step2" class="step hidden">
+    <div class="flex flex-col mb-6">
+      <label class="block text-gray-700 text-sm font-bold mb-4 text-center">
+        Configure Settings
+      </label>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Model</label>
+          <select
+            name="model"
+            id="model"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="">Select a model</option>
+            <option value="mistral-large-latest" selected>
+              mistral-large-latest (Recommended)
+            </option>
+            <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+          </select>
+        </div>
+        <div>
+          <label for="api_key" class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+          <input
+            type="password"
+            name="api_key"
+            id="api_key"
+            placeholder="Enter your API key"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+    </div>
+    </div>
+    <div class="flex gap-2">
+      <button 
+        type="button" 
+        id="backBtn" 
+        class="px-4 py-2 border w-full border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
       >
-        <circle
-          class="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
-        ></circle>
-        <path
-          class="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        ></path>
-      </svg>
-      Correcting transcription
-    </span>
-  </button>
+        Cancel
+      </button>
+      <button
+        type="submit"
+        id="submitBtn"
+        class="px-4 py-2 bg-indigo-600 w-full text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        Process Document
+      </button>
+    </div>
+  </div>
 </form>
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 {% endblock %}

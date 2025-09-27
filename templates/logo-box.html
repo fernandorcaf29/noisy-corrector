@@ -1,21 +1,30 @@
 {% extends "base.html" %} {% block main %}
-<div class="container mx-auto max-w-xl">
+<div class="container mx-auto max-w-lg">
   <div>
     <div class="{{ 'hidden' if request.path == '/demo' or request.path == '/evaluation' else '' }}">
-    <a href="{{ url_for('main.home') }}">
-      <div class="flex items-center justify-center gap-2 mb-2">
-        <h1 class="text-5xl font-bold text-gray-800">noisy corrector.</h1>
-        <img
-          src="{{ url_for('static', filename='svg/frequency-gray.svg') }}"
-          alt="frequency"
-        />
-      </div>
-    </a>
-    <p class="text-gray-600 mb-7 text-center">
+      <a href="{{ url_for('main.home') }}">
+        <div class="flex flex-col items-center mb-2">
+          <div class="relative">
+            <div class="flex items-end justify-center gap-2">
+              <h1 class="text-5xl font-bold text-gray-800">noisy corrector</h1>
+              <img
+                src="{{ url_for('static', filename='svg/frequency-gray.svg') }}"
+                alt="frequency"
+                class="h-10 w-10"
+              />
+              {% if request.path == '/playground' %}
+              <span class="absolute -top-4 right-5 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow">
+                Playground
+              </span>
+              {% endif %}
+            </div>
+        </div>
+      </a>
+    </div>
+    <p class="text-gray-600 mb-5 mt-2 text-center">
       Correct noisy text from your auto-generated audio transcription
     </p>
     </div>
-
     <div class="mx-auto bg-white p-5 rounded-lg shadow-md">
       {% block content %}{% endblock %}
     </div>
