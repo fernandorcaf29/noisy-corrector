@@ -155,3 +155,7 @@ Thumbs.db
 # Uploads files
 uploads/
 uploads/*
+
+# Node.js
+node_modules/
+package-lock.json
