@@ -27,6 +27,7 @@ class MistralClient(AIClient):
                 chat_response = self.client.chat.complete(
                     model=model,
                     messages=messages,
+                    temperature=0.2
                 )
 
                 # Pequeno delay após sucesso
@@ -39,7 +40,7 @@ class MistralClient(AIClient):
             except models.SDKError as e:
                 if e.status_code == 429:
                     delay = min(max(min_delay * (2 ** attempt), min_delay), max_delay)
-                    print(f"[429] Too Many Requests. Attempt {attempt+1}, sleeping {delay:.2f}s...")
+                   ## print(f"[429] Too Many Requests. Attempt {attempt+1}, sleeping {delay:.2f}s...")
                     time.sleep(delay)
                     attempt += 1
                     continue
