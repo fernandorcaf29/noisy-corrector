@@ -128,6 +128,7 @@ def process_evaluation():
     if not api_key:
         return abort(400)
 
+    custom_prompt = request.form.get("custom_prompt", "").strip() 
     client = AIClientFactory.create_client(model, api_key)
     file_processer = current_app.extensions["file_processer"]
     diff_generator = current_app.extensions["diff_generator"]
@@ -136,7 +137,7 @@ def process_evaluation():
     filepath, filename = file_processer.save_file(ref_file)
     reference_lines, content = file_processer.read_txt_paragraphs(filepath)
     
-    test_files = file_processer.process(test_file, client, model)
+    test_files = file_processer.process(test_file, client, model, custom_prompt if custom_prompt else None)
 
     diff_trans = diff_generator.generate_diff(
         reference_lines,

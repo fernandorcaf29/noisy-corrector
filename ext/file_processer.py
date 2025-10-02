@@ -50,7 +50,7 @@ class FileProcesser:
 
         return filepath, filename
 
-    def process(self, file, client, model):
+    def process(self, file, client, model, custom_prompt=None):
         file = self.validate_file(file)
 
         filepath, filename = self.save_file(file)
@@ -60,7 +60,7 @@ class FileProcesser:
         corrected_paragraphs = []
 
         for paragraph in paragraphs:
-            corrected_paragraph = client.ask_correction(paragraph, model)
+            corrected_paragraph = client.ask_correction(paragraph, model, custom_prompt)
             corrected_paragraphs.append(corrected_paragraph)
 
         corrected_content = "\n\n".join(corrected_paragraphs)
