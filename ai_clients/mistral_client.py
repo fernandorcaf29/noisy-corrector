@@ -24,8 +24,13 @@ class MistralClient(AIClient):
 
                 messages = [
                     {
+                        "role": "system",
+                        "content":prompt_model_map["header"] 
+                    },
+                    {
                         "role": "user",
                         "content": prompt_content,
+
                     },
                 ]
 
