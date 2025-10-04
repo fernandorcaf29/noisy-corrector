@@ -4,8 +4,8 @@ from bert_score import score
 nltk.download('punkt_tab')
 
 def calculate_bleu(reference, hypothesis):
-    reference_tokens = [nltk.word_tokenize(reference)]
-    hypothesis_tokens = nltk.word_tokenize(hypothesis)
+    reference_tokens = [nltk.word_tokenize(reference.lower())]
+    hypothesis_tokens = nltk.word_tokenize(hypothesis.lower())
     smoothie = nltk.translate.bleu_score.SmoothingFunction().method6
     return nltk.translate.bleu_score.sentence_bleu(reference_tokens, hypothesis_tokens, smoothing_function=smoothie)
 
