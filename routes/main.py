@@ -1,8 +1,9 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 from flask import Blueprint, render_template, request, abort, current_app
 from ai_clients.ai_client_factory import AIClientFactory
-from services.metrics import calculate_bert_score, calculate_bleu
+from services.metrics import calculate_metrics
 bp = Blueprint("main", __name__)
 
 
@@ -113,79 +114,33 @@ def internal_server_error(e):
 def process_evaluation():
     if request.method != "POST":
         return render_template("index.html")
-
     if 'reference_file' not in request.files or 'test_file' not in request.files:
         return abort(400)
-
     reference_file = request.files['reference_file']
     test_file = request.files['test_file']
-
     model = request.form.get("model")
     if not model:
         return abort(400)
-
     api_key = request.form.get("api_key")
     if not api_key:
         return abort(400)
-
-    custom_prompt = request.form.get("custom_prompt", "").strip() 
+    custom_prompt = request.form.get("custom_prompt", "").strip()
     client = AIClientFactory.create_client(model, api_key)
     file_processer = current_app.extensions["file_processer"]
-    diff_generator = current_app.extensions["diff_generator"]
-
+    comparison_generator = current_app.extensions["comparison_generator"]
     ref_file = file_processer.validate_file(reference_file)
     filepath, filename = file_processer.save_file(ref_file)
     reference_lines, content = file_processer.read_txt_paragraphs(filepath)
-    
     test_files = file_processer.process(test_file, client, model, custom_prompt if custom_prompt else None)
-
-    diff_trans = diff_generator.generate_diff(
+    diff_trans, diff_corr = comparison_generator.generate_separate_diffs(
         reference_lines,
-        test_files["input_file"]["paragraphs"]
-    )
-
-    diff_corr = diff_generator.generate_diff(
-        reference_lines,
+        test_files["input_file"]["paragraphs"],
         test_files["output_file"]["paragraphs"]
     )
-
     trans_lines = test_files["input_file"]["paragraphs"]
     corr_lines = test_files["output_file"]["paragraphs"]
-
-    results_metrics = []
-    for idx, (ref_line, corr_line, trans_line) in enumerate(zip(reference_lines, corr_lines, trans_lines), start=1):
-        ref_line_clean = ref_line.strip()
-        corr_line_clean = corr_line.strip()
-        trans_line_clean = trans_line.strip()
-        if not ref_line_clean or not corr_line_clean or not trans_line_clean:
-            continue
-        try:
-            bleu_original = calculate_bleu(ref_line_clean, trans_line_clean)
-            bert_original = calculate_bert_score(ref_line_clean, trans_line_clean)
-
-            bleu_corrected = calculate_bleu(ref_line_clean, corr_line_clean)
-            bert_corrected = calculate_bert_score(ref_line_clean, corr_line_clean)
-
-            results_metrics.append({
-                'index': idx,
-                'bleu_original': round(bleu_original * 100, 1),
-                'bleu_corrected': round(bleu_corrected * 100, 1),
-                'bleu_diff': round((bleu_corrected - bleu_original) * 100, 1),
-                'bert_original': round(bert_original * 100, 1),
-                'bert_corrected': round(bert_corrected * 100, 1),
-                'bert_diff': round((bert_corrected - bert_original) * 100, 1),
-            })
-        except Exception:
-            results_metrics.append({
-                'index': idx,
-                'bleu_original': 0,
-                'bleu_corrected': 0,
-                'bleu_diff': 0,
-                'bert_original': 0,
-                'bert_corrected': 0,
-                'bert_diff': 0,
-            })
-
+    results_metrics = calculate_metrics(reference_lines, trans_lines, corr_lines)
+    
     return render_template(
         "evaluation.html",
         trans_redlines=diff_trans,
