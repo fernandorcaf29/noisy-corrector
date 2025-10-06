@@ -4,7 +4,7 @@ import os
 from werkzeug.utils import secure_filename
 from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
 from flask import Flask
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class FileProcesser:
     def __init__(self, app=None):
@@ -52,16 +52,27 @@ class FileProcesser:
 
     def process(self, file, client, model, custom_prompt=None):
         file = self.validate_file(file)
-
         filepath, filename = self.save_file(file)
-
         paragraphs, content = self.read_txt_paragraphs(filepath)
 
-        corrected_paragraphs = []
+        corrected_paragraphs = [""] * len(paragraphs)  # Inicializa com strings vazias
 
-        for paragraph in paragraphs:
-            corrected_paragraph = client.ask_correction(paragraph, model, custom_prompt)
-            corrected_paragraphs.append(corrected_paragraph)
+        def correct_paragraph(paragraph, index):
+            try:
+                corrected = client.ask_correction(paragraph, model, custom_prompt)
+                return corrected, index
+            except Exception as e:
+                print(f"Error correcting paragraph {index}: {e}")
+                return paragraphs[index], index  # Retorna o original em caso de erro
+
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = []
+            for i, paragraph in enumerate(paragraphs):
+                futures.append(executor.submit(correct_paragraph, paragraph, i))
+
+            for future in as_completed(futures):
+                corrected, index = future.result()
+                corrected_paragraphs[index] = corrected
 
         corrected_content = "\n\n".join(corrected_paragraphs)
 
