@@ -1,4 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 from flask import Blueprint, render_template, request, abort, current_app

@@ -1,12 +1,51 @@
 import nltk
 from bert_score import BERTScorer
 import torch
-import threading
 
-nltk.download('punkt_tab')
+# Verificar se o punkt_tab já está baixado
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+    PUNKT_AVAILABLE = True
+except LookupError:
+    PUNKT_AVAILABLE = False
 
-bert_scorer = None
-bert_lock = threading.Lock()
+if not PUNKT_AVAILABLE:
+    try:
+        nltk.download('punkt_tab', quiet=True)
+    except Exception as e:
+        print(f"Warning: Could not download punkt_tab: {e}")
+
+class BertScoreCalculator:
+    def __init__(self):
+        self._scorer = None
+    
+    @property
+    def scorer(self):
+        if self._scorer is None:
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            self._scorer = BERTScorer(
+                lang='pt',
+                model_type='xlm-roberta-base',
+                device=device,
+                rescale_with_baseline=True
+            )
+        return self._scorer
+    
+    def calculate(self, reference, hypothesis):
+        if not reference.strip() or not hypothesis.strip():
+            return 0.0
+            
+        if reference.strip() == hypothesis.strip():
+            return 1.0
+        
+        try:
+            P, R, F1 = self.scorer.score([hypothesis], [reference])
+            return F1.mean().item()
+        except Exception as e:
+            print(f"Error calculating BERTScore: {e}")
+            return 0.0
+
+bert_calculator = BertScoreCalculator()
 
 def calculate_bleu(reference, hypothesis):
     if reference.strip() == hypothesis.strip():
@@ -16,33 +55,8 @@ def calculate_bleu(reference, hypothesis):
     smoothie = nltk.translate.bleu_score.SmoothingFunction().method1
     return nltk.translate.bleu_score.sentence_bleu(reference_tokens, hypothesis_tokens, smoothing_function=smoothie)
 
-def get_bert_scorer():
-    global bert_scorer
-    with bert_lock:
-        if bert_scorer is None:
-            device = 'cuda' if torch.cuda.is_available() else 'cpu'
-            bert_scorer = BERTScorer(
-                lang='pt',
-                model_type='xlm-roberta-base',
-                device=device,
-                rescale_with_baseline=True
-            )
-    return bert_scorer
-
 def calculate_bert_score(reference, hypothesis):
-    if not reference.strip() or not hypothesis.strip():
-        return 0.0
-        
-    if reference.strip() == hypothesis.strip():
-        return 1.0
-    
-    try:
-        scorer = get_bert_scorer()
-        P, R, F1 = scorer.score([hypothesis], [reference])
-        return F1.mean().item()
-    except Exception as e:
-        print(f"Error calculating BERTScore: {e}")
-        return 0.0
+    return bert_calculator.calculate(reference, hypothesis)
 
 def calculate_metrics(reference_lines, trans_lines, corr_lines):
     results_metrics = []

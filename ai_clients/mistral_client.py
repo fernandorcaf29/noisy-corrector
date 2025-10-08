@@ -1,5 +1,4 @@
 import time
-import threading
 from mistralai import Mistral
 from prompts import prompt_model_map
 from .ai_client import AIClient
@@ -11,7 +10,6 @@ class MistralClient(AIClient):
     def __init__(self, api_key):
         self.client = Mistral(api_key)
         self.asr_corrector = ASRCorrector(self)
-        self.lock = threading.Lock()
 
     def ask_correction(self, transcription, model, custom_prompt=None):
         min_delay = 0.2
