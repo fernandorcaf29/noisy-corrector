@@ -113,27 +113,35 @@ def internal_server_error(e):
 def process_evaluation():
     if request.method != "POST":
         return render_template("index.html")
+    
     if 'reference_file' not in request.files or 'test_file' not in request.files:
-        return abort(400)
+        return abort(400, "Reference file and test file are required")
+    
     reference_file = request.files['reference_file']
     test_file = request.files['test_file']
+    
     model = request.form.get("model")
     if not model:
-        return abort(400)
+        return abort(400, "Model selection is required")
+    
     api_key = request.form.get("api_key")
     if not api_key:
-        return abort(400)
+        return abort(400, "API key is required")
+    
     custom_prompt = request.form.get("custom_prompt", "").strip()
     client = AIClientFactory.create_client(model, api_key)
     file_processer = current_app.extensions["file_processer"]
-    comparison_generator = current_app.extensions["comparison_generator"]
+    diff_generator = current_app.extensions["diff_generator"]
     ref_file = file_processer.validate_file(reference_file)
     filepath, filename = file_processer.save_file(ref_file)
     reference_lines, content = file_processer.read_txt_paragraphs(filepath)
     test_files = file_processer.process(test_file, client, model, custom_prompt if custom_prompt else None)
-    diff_trans, diff_corr = comparison_generator.generate_separate_diffs(
+    diff_trans = diff_generator.generate_diff(
         reference_lines,
-        test_files["input_file"]["paragraphs"],
+        test_files["input_file"]["paragraphs"]
+    )
+    diff_corr = diff_generator.generate_diff(
+        reference_lines, 
         test_files["output_file"]["paragraphs"]
     )
     trans_lines = test_files["input_file"]["paragraphs"]
