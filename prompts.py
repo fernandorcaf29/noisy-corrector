@@ -70,3 +70,36 @@ prompt_model_map = {
         "Responda apenas com a correção."
     ),
 }
+
+def get_correction_prompt(text: str, model: str) -> str:
+    return prompt_model_map[model](text)
+
+def get_metadata_extraction_prompt(sample_text: str) -> str:
+    return f"""
+    ANALISE ESTE TEXTO E IDENTIFIQUE:
+
+    **ENTIDADES PRINCIPAIS**: Nomes de pessoas, lugares, instituições, organizações (máximo 5)
+    **TIPO DE CONVERSA**: entrevista, debate, discurso, reunião, aula, podcast, etc.
+    **TEMA CENTRAL**: Assunto principal em 3-6 palavras
+
+    **FORMATO EXATO PARA RESPOSTA**:
+    ENTIDADES: nome1, nome2, nome3, nome4, nome5, nome6
+    TIPO: [tipo específico da conversa]
+    TEMA: [tema principal resumido]
+
+    **EXEMPLOS CORRETOS**:
+    ENTIDADES: entrevistadora Juliana, candidato Bruno Lessa, Niterói, UFF, Prefeitura, Podemos
+    TIPO: entrevista política eleitoral
+    TEMA: propostas para proteção animal
+
+    ENTIDADES: professor Carlos, alunos, escola municipal, secretaria educação
+    TIPO: aula sobre educação ambiental  
+    TEMA: sustentabilidade nas escolas
+
+    ENTIDADES: médica Dra Silva, pacientes, hospital municipal
+    TIPO: consulta médica gravada
+    TEMA: cuidados com saúde preventiva
+
+    **TEXTO PARA ANALISAR**:
+    {sample_text}
+    """

@@ -1,6 +1,4 @@
 from .metrics_calculator import ComprehensiveMetricsCalculator
-from .bleu_calculator import BleuCalculator
-from .bert_calculator import BertScoreCalculator
 
 def calculate_metrics(reference_lines, trans_lines, corr_lines):
     calculator = ComprehensiveMetricsCalculator()
