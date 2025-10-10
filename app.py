@@ -1,8 +1,14 @@
+import sys
+import os
 from flask import Flask
 from config import UPLOAD_FOLDER, MAX_CONTENT_LENGTH
 from routes.main import bp as main_bp
 from ext.file_processer import FileProcesser
 from ext.diff_generator import DiffGenerator
+
+if sys.platform.startswith('win'):
+    os.system('chcp 65001 > nul')  # Windows UTF-8
+sys.stdout.reconfigure(encoding='utf-8') if hasattr(sys.stdout, 'reconfigure') else None
 
 app = Flask(__name__)
 

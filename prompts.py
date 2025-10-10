@@ -1,40 +1,42 @@
 prompt_model_map = {
     "mistral-large-latest": lambda transcription: (
-        "DIRETRIZES PRINCIPAIS:\n"
-        "1. PRESERVE a fala original INTEGRALMENTE\n"
-        "2. REVISE APENAS erros CLAROS e INEQUÍVOCOS de reconhecimento\n"
-        "3. EM DÚVIDA, NÃO altere NADA\n\n"
+        "REVISÃO DE TEXTO GERADO POR RECONHECIMENTO AUTOMÁTICO DE FALA\n"
+        
+        "CORRIGIR APENAS:\n"
+        "* Pseudopalavras;\n"
+        "* Erros fonéticos.\n\n"
+        
+        "PRESERVAR DA TRANSCRIÇÃO ORIGINAL:\n"
+        "* Linguagem informal;\n"
+        "* Ordem das palavras;\n"
+        "* Flexões linguísticas (mesmo que soem estranhas);\n"
+        "* Marcas de oralidade;\n"
+        '* Repetição de palavras e gaguejamento (Ex:"um uma", "essa essa", "área uma área","pr pra");\n'
+        "* Girias e estrangeirismos.\n\n"
 
-        "CASOS ESPECÍFICOS PARA CORREÇÃO:\n"
-        "* Palavras INEXISTENTES no português (ex: 'netero' → 'niteroienses')\n"
-        "* Siglas OFICIAIS de instituições (ex: 'uf' → 'UFF')\n"
-        "* Nomes de marcas/redes com grafia OFICIAL (ex: 'tiktok' → 'TikTok')\n"
-        "* Palavras com significado claro a partir do contexto (ex: 'Aras' → 'haras' quando cavalos são mencionados, 'cin' → 'CLIN' quando no contexto de recolhimento de lixo)\n"
-        "* APENAS quando houver EVIDÊNCIA CLARA do correto\n\n"
+        "PRESERVAR DA PALAVRA ORIGINAL:\n"
+        "* Capitalização;\n"
+        "* Flexão de gênero;\n"
+        "* Flexão de número;\n"
+        "* Conjugação.\n"
+        
+        "NUNCA:\n"
+        "* Alterar DELIMITADORES NUMÉRICOS (Ex:'5.8', '1,5', 'R 400');\n"
+        "* Gerar palavras adjacentes as corrigidas ou em elipses;\n"
+        "* Trocar 'de reais' por 'R$' e casos equivalentes;\n"
+        "* Rearranjar a estrutura frasal original;\n"
+        "* Usar uppercase em palavras que não sejam nomes próprios;\n"
+        "* Remover repetições das palavras, mesmo se uma delas tiver erro fonético.\n\n"
+        
+        "PARA FRASES CURTAS (< 5 palavras):\n"
+        "* Só corrija se houver evidente erro de digitação;\n"
+        "* Mantenha inalterado caso contrário.\n\n"
 
-        "CASOS ESPECÍFICOS PARA PRESERVAÇÃO:\n"
-        "* Pronúncia como transcrita ('te do', 'tá', 'né', 'eh')\n"
-        "* TODAS repetições ('para esse esse', 'e eh', 'pras', 'uma')\n"
-        "* Estrutura FRASAL COMPLETA (não altere ordem ou palavras)\n"
-        "* Formatação NUMÉRICA EXATA (5.8, R5, 'de reais' - não adicione R$)\n"
-        "* Nomes próprios COMO TRANSCRITOS ('Emusa', 'Aras', 'cin')\n"
-        "* Hífens e pontuação COMO ESTÃO NO ORIGINAL (ex: 'maus-tratos')\n"
-        "* Número gramatical ORIGINAL (singular/plural)\n\n"
+        "TRANSCRIÇÃO PODE SER UMA UNICA PALAVRA.\n\n"
 
-        "PROIBIÇÕES ABSOLUTAS:\n"
-        "* NÃO adicione, remova ou altere palavras, a menos que seja um dos casos específicos de correção\n"
-        "* NÃO altere ordem das palavras ou estrutura frasal\n"
-        "* NÃO modifique formatação numérica/monetária (preserve 'de reais', não adicione R$ ou R)\n"
-        "* NÃO adicione pontuação ou símbolos\n"
-        "* NÃO corrija repetições, hesitações ou oralidade\n"
-        "* NÃO tente deduzir contextos, a menos que seja um dos casos específicos de correção\n\n"
-
-        "REGRA FINAL: Se não for um dos casos específicos de correção, PRESERVE.\n\n"
-
-        "Retorne apenas a transcrição revisada.\n\n"
-
-        "TRANSCRIÇÃO ORIGINAL:\n\n"
-
+        "Responda apenas com a transcrição corrigida, sem pontuação.\n\n"
+        
+        "TRANSCRIÇÃO ORIGINAL:\n"
         f"{transcription}"
     ),
     "gemini-1.5-flash": lambda transcription: (
@@ -66,8 +68,5 @@ prompt_model_map = {
         "5. EM CASO DE DÚVIDA:\n"
         "  - SEMPRE prefira manter a transcrição original\n\n"
         "Responda apenas com a correção."
-    ),
-    "header":(
-        "Você é revisor especializado em transcrições ASR contextualizadas no Brasil."
     ),
 }

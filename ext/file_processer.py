@@ -1,4 +1,4 @@
-import json
+import time
 from flask import abort
 import os
 from werkzeug.utils import secure_filename
@@ -53,33 +53,61 @@ class FileProcesser:
     def process(self, file, client, model, custom_prompt=None):
         file = self.validate_file(file)
         filepath, filename = self.save_file(file)
-        paragraphs, content = self.read_txt_paragraphs(filepath)
+        paragraphs, full_content = self.read_txt_paragraphs(filepath)    
+        document_metadata = client.extract_document_metadata(full_content)
 
-        corrected_paragraphs = [""] * len(paragraphs)  # Inicializa com strings vazias
+        
+        corrected_paragraphs = [""] * len(paragraphs)
 
-        def correct_paragraph(paragraph, index):
+        def correct_paragraph(paragraph, index, metadata):
             try:
-                corrected = client.ask_correction(paragraph, model, custom_prompt)
-                return corrected, index
+                if not paragraph or not paragraph.strip():
+                    return paragraph or "", index
+                    
+                paragraph_clean = paragraph.encode('utf-8', errors='ignore').decode('utf-8').strip()
+                
+                if not paragraph_clean:
+                    return "", index
+                    
+                corrected = client.ask_correction(paragraph_clean, model, custom_prompt, metadata)
+                
+                if corrected and corrected.strip():
+                    corrected = corrected.encode('utf-8', errors='ignore').decode('utf-8').strip()
+                else:
+                    corrected = paragraph_clean
+                    
+                return corrected, index                
             except Exception as e:
-                print(f"Error correcting paragraph {index}: {e}")
-                return paragraphs[index], index  # Retorna o original em caso de erro
-
-        with ThreadPoolExecutor(max_workers=8) as executor:
+                safe_paragraph = paragraph.encode('utf-8', errors='ignore').decode('utf-8') if paragraph else ""
+                return safe_paragraph, index
+        
+        with ThreadPoolExecutor(max_workers=3) as executor:
             futures = []
+            
             for i, paragraph in enumerate(paragraphs):
-                futures.append(executor.submit(correct_paragraph, paragraph, i))
+                if paragraph and paragraph.strip():
+                    safe_paragraph = paragraph.encode('utf-8', errors='ignore').decode('utf-8')
+                    futures.append(executor.submit(
+                        correct_paragraph, safe_paragraph, i, document_metadata
+                    ))
+                else:
+                    corrected_paragraphs[i] = ""
 
+            completed = 0
             for future in as_completed(futures):
                 corrected, index = future.result()
                 corrected_paragraphs[index] = corrected
+                completed += 1
+                
+                if completed % 3 == 0:
+                    time.sleep(0.3)
 
         corrected_content = "\n\n".join(corrected_paragraphs)
 
         return {
             "input_file": {
                 "paragraphs": paragraphs,
-                "content": content,
+                "content": full_content,
                 "filename": filename,
             },
             "output_file": {
@@ -87,4 +115,5 @@ class FileProcesser:
                 "content": corrected_content,
                 "filename": f"corrected_{filename}",
             },
+            "metadata": document_metadata,
         }
