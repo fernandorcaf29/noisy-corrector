@@ -30,22 +30,18 @@ class RateLimiter:
                 return operation()
                 
             except Exception as e:
-                if self._is_rate_limit_error(e):
+                error_msg = str(e).lower()
+                if any(term in error_msg for term in ['rate limit', 'quota', '429', 'resource exhausted']):
                     delay = min(max(min_delay * (2 ** attempt), min_delay), max_delay)
-                    print(f"[Rate Limit] Attempt {attempt+1}/{max_attempts}, sleeping {delay:.2f}s...")
+                    print(f"Rate limit detected. Attempt {attempt+1}/{max_attempts}, sleeping {delay:.2f}s...")
                     time.sleep(delay)
                     attempt += 1
                     continue
-                elif self._is_validation_error(e):
-                    abort(422)
+                elif '400' in error_msg or 'invalid' in error_msg:
+                    print(f"API validation error: {e}")
+                    return fallback_value
                 else:
                     print(f"API Error: {e}")
                     return fallback_value
         
         return fallback_value
-    
-    def _is_rate_limit_error(self, error: Exception) -> bool:
-        return hasattr(error, 'status_code') and getattr(error, 'status_code') == 429
-    
-    def _is_validation_error(self, error: Exception) -> bool:
-        return hasattr(error, 'status_code') and getattr(error, 'status_code') == 422

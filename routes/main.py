@@ -39,10 +39,10 @@ def result():
 
     client = AIClientFactory.create_client(model, api_key)
 
-    file_processer = current_app.extensions["file_processer"]
+    file_processor = current_app.extensions["file_processor"]
     diff_generator = current_app.extensions["diff_generator"]
 
-    files = file_processer.process(file, client, model)
+    files = file_processor.process(file, client, model)
     
     diff = diff_generator.generate_diff(
         files["input_file"]["paragraphs"], files["output_file"]["paragraphs"]
@@ -130,12 +130,12 @@ def process_evaluation():
     
     custom_prompt = request.form.get("custom_prompt", "").strip()
     client = AIClientFactory.create_client(model, api_key)
-    file_processer = current_app.extensions["file_processer"]
+    file_processor = current_app.extensions["file_processor"]
     diff_generator = current_app.extensions["diff_generator"]
-    ref_file = file_processer.validate_file(reference_file)
-    filepath, filename = file_processer.save_file(ref_file)
-    reference_lines, content = file_processer.read_txt_paragraphs(filepath)
-    test_files = file_processer.process(test_file, client, model, custom_prompt if custom_prompt else None)
+    ref_file = file_processor.validate_file(reference_file)
+    filepath, filename = file_processor.save_file(ref_file)
+    reference_lines, content = file_processor.read_txt_paragraphs(filepath)
+    test_files = file_processor.process(test_file, client, model, custom_prompt if custom_prompt else None)
     diff_trans = diff_generator.generate_diff(
         reference_lines,
         test_files["input_file"]["paragraphs"]
