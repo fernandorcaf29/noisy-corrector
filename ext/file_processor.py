@@ -55,18 +55,7 @@ class FileProcessor:
         filepath, filename = self.save_file(file)
         paragraphs, full_content = self.read_txt_paragraphs(filepath)
         
-        # Extrair metadados apenas para Mistral (Gemini não usa)
-        document_metadata = None
-        if model.startswith('mistral'):
-            document_metadata = client.extract_document_metadata(full_content)
-        else:
-            # Para Gemini, usar metadados básicos
-            document_metadata = {
-                "entities": ["transcrição", "gemini"],
-                "document_type": "conversa gravada",
-                "main_topic": "discussão geral",
-                "source": "gemini_fallback"
-            }
+        document_metadata = client.extract_document_metadata(full_content, model=model)
 
         corrected_paragraphs = [""] * len(paragraphs)
 
@@ -91,25 +80,74 @@ class FileProcessor:
             except Exception as e:
                 safe_paragraph = paragraph.encode('utf-8', errors='ignore').decode('utf-8') if paragraph else ""
                 return safe_paragraph, index
-
-        # Estratégia diferente para Gemini vs Mistral
-        if model.startswith('gemini'):
-            # Para Gemini: processamento sequencial com delays maiores
-            print(f"Processing {len(paragraphs)} paragraphs with Gemini (sequential mode)")
             
-            for i, paragraph in enumerate(paragraphs):
-                if paragraph and paragraph.strip():
-                    safe_paragraph = paragraph.encode('utf-8', errors='ignore').decode('utf-8')
-                    corrected, index = correct_paragraph(safe_paragraph, i, document_metadata)
-                    corrected_paragraphs[index] = corrected
+        def correct_chunk(chunk_text, paragraph_indices, metadata):
+            """Corrige um chunk que pode conter múltiplos parágrafos."""
+            try:
+                chunk_clean = chunk_text.encode('utf-8', errors='ignore').decode('utf-8').strip()
+                if not chunk_clean:
+                    return [""] * len(paragraph_indices)
+
+                corrected = client.ask_correction(chunk_clean, model, custom_prompt, metadata)
+                corrected = corrected.encode('utf-8', errors='ignore').decode('utf-8').strip() if corrected else chunk_clean
+
+                # Try multiple splitting strategies
+                split_corrected = corrected.split("\n\n")  # First try double newline
+                
+                if len(split_corrected) != len(paragraph_indices):
+                    split_corrected = corrected.split("\n")  # Try single newline
                     
-                    # Delay maior entre requisições para respeitar rate limits do Gemini
-                    if i < len(paragraphs) - 1:  # Não esperar após o último
-                        time.sleep(4)  # 4 segundos entre requisições (15/min)
-                        
-                    print(f"Processed paragraph {i+1}/{len(paragraphs)} with Gemini")
-                else:
+                if len(split_corrected) != len(paragraph_indices):
+                    # If still no match, try to split by sentence endings
+                    import re
+                    split_corrected = re.split(r'[.!?]+', corrected)
+                    split_corrected = [s.strip() for s in split_corrected if s.strip()]
+                    
+                # Final fallback
+                if len(split_corrected) != len(paragraph_indices):
+                    split_corrected = [corrected] * len(paragraph_indices)
+
+                return split_corrected
+            except Exception as e:
+                safe_chunk = chunk_text.encode('utf-8', errors='ignore').decode('utf-8')
+                return [safe_chunk] * len(paragraph_indices)
+
+        if model.startswith("gemini"):
+            print(f"Processing {len(paragraphs)} paragraphs with Gemini (chunked sequential mode)")
+
+            # Criar chunks de múltiplos parágrafos
+            max_chunk_size = client.max_chunk_size
+            chunk_text = ""
+            chunk_indices = []
+
+            for i, paragraph in enumerate(paragraphs):
+                paragraph_safe = paragraph.encode('utf-8', errors='ignore').decode('utf-8').strip()
+                if not paragraph_safe:
                     corrected_paragraphs[i] = ""
+                    continue
+
+                # Verifica se adicionando o parágrafo ao chunk excede o limite
+                if len(chunk_text) + len(paragraph_safe) + 2 <= max_chunk_size:
+                    if chunk_text:
+                        chunk_text += "\n" + paragraph_safe
+                    else:
+                        chunk_text = paragraph_safe
+                    chunk_indices.append(i)
+                else:
+                    # Processar chunk atual
+                    corrected_chunk = correct_chunk(chunk_text, chunk_indices, document_metadata)
+                    for idx, para_idx in enumerate(chunk_indices):
+                        corrected_paragraphs[para_idx] = corrected_chunk[idx]
+
+                    # Iniciar novo chunk
+                    chunk_text = paragraph_safe
+                    chunk_indices = [i]
+
+            # Processar o último chunk
+            if chunk_indices:
+                corrected_chunk = correct_chunk(chunk_text, chunk_indices, document_metadata)
+                for idx, para_idx in enumerate(chunk_indices):
+                    corrected_paragraphs[para_idx] = corrected_chunk[idx]
         else:
             # Para Mistral: processamento paralelo (comportamento original)
             print(f"Processing {len(paragraphs)} paragraphs with Mistral (parallel mode)")

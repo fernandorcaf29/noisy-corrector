@@ -87,8 +87,8 @@ class MistralClient(AIClient):
         corrected_content = corrected_content.encode('utf-8', errors='ignore').decode('utf-8')
         return self.asr_corrector.postprocess(corrected_content, metadata_para)
 
-    def extract_document_metadata(self, full_content):
-        return self.metadata_extractor.extract_document_metadata(full_content)
+    def extract_document_metadata(self, full_content, model):
+        return self.metadata_extractor.extract_document_metadata(full_content, model)
 
     def _build_contextual_prompt(self, text, custom_prompt, metadata, model):
         has_custom_prompt = custom_prompt and custom_prompt.strip()
