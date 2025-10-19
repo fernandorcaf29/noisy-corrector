@@ -1,9 +1,8 @@
 import time
-from flask import abort
+from flask import abort, Flask
 import os
 from werkzeug.utils import secure_filename
 from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
-from flask import Flask
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class FileProcessor:
@@ -17,46 +16,36 @@ class FileProcessor:
         app.extensions["file_processor"] = self
 
     def validate_file(self, file):
-        if file.filename == "":
+        if not file or file.filename == "":
             return abort(400)
-
-        if not (
-            file
-            and "." in file.filename
-            and file.filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-        ):
+        ext = file.filename.rsplit(".", 1)[-1].lower()
+        if ext not in ALLOWED_EXTENSIONS:
             return abort(400)
-
         return file
 
     def read_txt_paragraphs(self, filepath):
-        try:
-            with open(filepath, "r", encoding="utf-8") as f:
-                content = f.read()
-        except UnicodeDecodeError:
-            with open(filepath, "r", encoding="latin-1") as f:
-                content = f.read()
+        for encoding in ("utf-8", "latin-1"):
+            try:
+                with open(filepath, "r", encoding=encoding) as f:
+                    content = f.read()
+                break
+            except UnicodeDecodeError:
+                continue
 
         paragraphs = [p.strip() for p in content.split("\n\n") if p.strip()]
-
         return paragraphs, content
 
     def save_file(self, file):
         filename = secure_filename(file.filename)
-
         filepath = os.path.join(UPLOAD_FOLDER, filename)
-
         file.save(filepath)
-
         return filepath, filename
 
     def process(self, file, client, model, custom_prompt=None):
         file = self.validate_file(file)
         filepath, filename = self.save_file(file)
         paragraphs, full_content = self.read_txt_paragraphs(filepath)
-        
         document_metadata = client.extract_document_metadata(full_content, model=model)
-
         corrected_paragraphs = [""] * len(paragraphs)
 
         def correct_paragraph(paragraph, index, metadata):
@@ -82,7 +71,6 @@ class FileProcessor:
                 return safe_paragraph, index
             
         def correct_chunk(chunk_text, paragraph_indices, metadata):
-            """Corrige um chunk que pode conter múltiplos parágrafos."""
             try:
                 chunk_clean = chunk_text.encode('utf-8', errors='ignore').decode('utf-8').strip()
                 if not chunk_clean:
@@ -91,19 +79,16 @@ class FileProcessor:
                 corrected = client.ask_correction(chunk_clean, model, custom_prompt, metadata)
                 corrected = corrected.encode('utf-8', errors='ignore').decode('utf-8').strip() if corrected else chunk_clean
 
-                # Try multiple splitting strategies
-                split_corrected = corrected.split("\n\n")  # First try double newline
+                split_corrected = corrected.split("\n\n")
                 
                 if len(split_corrected) != len(paragraph_indices):
-                    split_corrected = corrected.split("\n")  # Try single newline
+                    split_corrected = corrected.split("\n")
                     
                 if len(split_corrected) != len(paragraph_indices):
-                    # If still no match, try to split by sentence endings
                     import re
                     split_corrected = re.split(r'[.!?]+', corrected)
                     split_corrected = [s.strip() for s in split_corrected if s.strip()]
                     
-                # Final fallback
                 if len(split_corrected) != len(paragraph_indices):
                     split_corrected = [corrected] * len(paragraph_indices)
 
@@ -115,7 +100,6 @@ class FileProcessor:
         if model.startswith("gemini"):
             print(f"Processing {len(paragraphs)} paragraphs with Gemini (chunked sequential mode)")
 
-            # Criar chunks de múltiplos parágrafos
             max_chunk_size = client.max_chunk_size
             chunk_text = ""
             chunk_indices = []
@@ -126,7 +110,6 @@ class FileProcessor:
                     corrected_paragraphs[i] = ""
                     continue
 
-                # Verifica se adicionando o parágrafo ao chunk excede o limite
                 if len(chunk_text) + len(paragraph_safe) + 2 <= max_chunk_size:
                     if chunk_text:
                         chunk_text += "\n" + paragraph_safe
@@ -134,22 +117,18 @@ class FileProcessor:
                         chunk_text = paragraph_safe
                     chunk_indices.append(i)
                 else:
-                    # Processar chunk atual
                     corrected_chunk = correct_chunk(chunk_text, chunk_indices, document_metadata)
                     for idx, para_idx in enumerate(chunk_indices):
                         corrected_paragraphs[para_idx] = corrected_chunk[idx]
 
-                    # Iniciar novo chunk
                     chunk_text = paragraph_safe
                     chunk_indices = [i]
 
-            # Processar o último chunk
             if chunk_indices:
                 corrected_chunk = correct_chunk(chunk_text, chunk_indices, document_metadata)
                 for idx, para_idx in enumerate(chunk_indices):
                     corrected_paragraphs[para_idx] = corrected_chunk[idx]
         else:
-            # Para Mistral: processamento paralelo (comportamento original)
             print(f"Processing {len(paragraphs)} paragraphs with Mistral (parallel mode)")
             
             with ThreadPoolExecutor(max_workers=3) as executor:
@@ -169,8 +148,7 @@ class FileProcessor:
                     corrected, index = future.result()
                     corrected_paragraphs[index] = corrected
                     completed += 1
-                    
-                    # Pequeno delay para Mistral (já tem rate limiting interno)
+            
                     if completed % 3 == 0:
                         time.sleep(0.3)
                         
@@ -178,7 +156,6 @@ class FileProcessor:
 
         corrected_content = "\n\n".join(corrected_paragraphs)
 
-        # Adicionar informações de uso se disponível (especialmente para Gemini)
         usage_info = ""
         if hasattr(client, 'get_usage_info'):
             try:
@@ -204,10 +181,7 @@ class FileProcessor:
         }
 
     def get_estimated_processing_time(self, paragraphs_count, model):
-        """Estima o tempo de processamento baseado no modelo"""
         if model.startswith('gemini'):
-            # Gemini: 4 segundos por parágrafo + overhead
             return paragraphs_count * 4 + 10
         else:
-            # Mistral: ~1 segundo por parágrafo em paralelo
             return paragraphs_count * 0.5 + 5

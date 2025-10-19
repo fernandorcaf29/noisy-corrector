@@ -22,6 +22,3 @@ file_processor.init_app(app)
 diff_generator.init_app(app)
 
 app.register_blueprint(main_bp)
-
-if __name__ == "__main__":
-    app.run(debug=True)

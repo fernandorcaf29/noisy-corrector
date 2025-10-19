@@ -19,22 +19,11 @@ def result():
     if request.method != "POST":
         return render_template("index.html")
 
-    if "document" not in request.files:
-        return abort(400)
-
-    file = request.files["document"]
-
-    if not file:
-        return abort(400)
-
+    file = request.files.get("document")
     model = request.form.get("model")
-
-    if not model:
-        return abort(400)
-
     api_key = request.form.get("api_key")
 
-    if not api_key:
+    if not all([file, model, api_key]):
         return abort(400)
 
     client = AIClientFactory.create_client(model, api_key)
@@ -44,9 +33,9 @@ def result():
 
     files = file_processor.process(file, client, model)
     
-    diff = diff_generator.generate_diff(
-        files["input_file"]["paragraphs"], files["output_file"]["paragraphs"]
-    )
+    input_paragraphs = files["input_file"]["paragraphs"]
+    output_paragraphs = files["output_file"]["paragraphs"]
+    diff = diff_generator.generate_diff(input_paragraphs, output_paragraphs)
 
     return render_template(
         "result.html",
@@ -54,6 +43,7 @@ def result():
         file_content=files["output_file"]["content"],
         filename=files["output_file"]["filename"],
     )
+
 
 
 @bp.errorhandler(429)
