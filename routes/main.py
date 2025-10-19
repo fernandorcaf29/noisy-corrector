@@ -1,7 +1,7 @@
 import json
 import os
 from flask import Blueprint, render_template, request, abort, current_app
-from ai_clients.ai_client_factory import AIClientFactory
+from ai_client.ai_client_factory import AIClientFactory
 from services.metrics import calculate_bert_score, calculate_bleu
 bp = Blueprint("main", __name__)
 

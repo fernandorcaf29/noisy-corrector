@@ -1,5 +1,5 @@
-from .mistral_client import MistralClient
-from .gemini_client import GeminiClient
+from .ai_clients.mistral_client import MistralClient
+from .ai_clients.gemini_client import GeminiClient
 
 
 class AIClientFactory:

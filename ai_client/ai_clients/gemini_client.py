@@ -1,5 +1,5 @@
-from prompts import prompt_model_map
-from .ai_client import AIClient
+from .prompts import prompt_model_map
+from ai_client.ai_client import AIClient
 from google import genai
 from flask import abort
 

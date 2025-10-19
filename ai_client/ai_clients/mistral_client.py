@@ -1,7 +1,7 @@
 import time
 from mistralai import Mistral
-from prompts import prompt_model_map
-from .ai_client import AIClient
+from .prompts import prompt_model_map
+from ai_client.ai_client import AIClient
 from flask import abort
 from mistralai import models
 
