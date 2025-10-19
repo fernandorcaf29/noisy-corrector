@@ -12,11 +12,8 @@ class DiffGenerator:
             raise TypeError("Invalid Flask app instance.")
         app.extensions["diff_generator"] = self
 
-    def generate_diff(self, original, corrected):
-        diff = []
-
-        for original, corrected in zip(original, corrected):
-            redline = Redlines(original, corrected, markdown_style="custom_css")
-            diff.append({"markdown_diff": redline.output_markdown})
-
-        return diff
+    def generate_diff(self, original_paragraphs, corrected_paragraphs):
+        return [
+            {"markdown_diff": Redlines(o, c, markdown_style="custom_css").output_markdown}
+            for o, c in zip(original_paragraphs, corrected_paragraphs)
+        ]
