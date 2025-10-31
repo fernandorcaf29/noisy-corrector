@@ -5,7 +5,7 @@ from .ai_clients.gemini_client import GeminiClient
 class AIClientFactory:
     model_client_map = {
         "mistral-large-latest": MistralClient,
-        "gemini-1.5-flash": GeminiClient,
+        "gemini-2.5-flash": GeminiClient,
     }
 
     @staticmethod

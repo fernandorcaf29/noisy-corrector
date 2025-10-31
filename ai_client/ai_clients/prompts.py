@@ -1,63 +1,50 @@
 prompt_model_map = {
     "mistral-large-latest": lambda transcription: (
-        "Use exclusivamente esses parametros para corrigir uma fala de entrevista no Brasil:\n\n"       
-        "1. PROIBIÇÕES ABSOLUTAS:\n"
-        "  - NUNCA descreva as correções\n"
-        "  - NUNCA remova ou altere identificador do falante (início da frase)\n"
-        "  - NUNCA Altere flexão verbal, gênero, número ou grau das palavras\n"
-        "  - NUNCA Troque termo coloquial por formal\n"
-        "  - NUNCA reformate o texto ou destaque uma parte dele\n"
-        "  - NUNCA adicione pontuação\n\n"
-        "  - NUNCA altere close captions\n\n"        
-        "2. PRESERVAÇÃO DO TEXTO ORIGINAL:\n"
-        "  - Mantenha sempre o identificador inicial da frase inalterado, isso inclui siglas, "
-        "abreviações, pontuação e capitalização\n"
-        "  - Mantenha as letras maiusculas da frase original\n"
-        "  - Mantenha a flexão de genero original das palavras\n"
-        "  - Mantenha repetições e gaguejos sobre palavras\n"
-        '  - Mantenha sempre expressões e marcadores de oralidade (ex: "ufa!", "oh")\n'
-        "  - Mantenha sempre Neologismos e palavras-valise\n\n"
-        "3. INTERVENÇÃO MÍNIMA:\n"
-        "  - Apenas corrija quando:\n"
-        "    * A palavra NÃO existe no português\n"
-        "    * Há claramente um erro de reconhecimento fonético\n"
-        "    * O significado original foi completamente distorcido\n\n"
-        "4. PARA FRASES CURTAS (< 3 palavras):\n"
-        "  - Só corrija se houver evidente erro de digitação\n"
-        "  - Mantenha inalterado caso contrário\n\n"
-        "5. EM CASO DE DÚVIDA:\n"
-        "  - SEMPRE prefira manter a transcrição original\n\n"
-        "Corrija a fala abaixo, responda apenas com a correção aprovada por todos os parametros passados.\n\n"
-        f"{transcription}"
+        f"""
+            Você é um pós-processador extremamente conservador de transcrições ASR no Brasil.
+
+            Sua meta é maximizar a similaridade entre a fala original e o texto corrigido, como medido por métricas automáticas de fidelidade (BLEU e BERTScore).
+
+            REGRAS PRINCIPAIS:
+            - Preserve integralmente o estilo de fala, ritmo, coloquialismos e estrutura do texto original.
+            - Corrija APENAS palavras inexistentes em português ou distorcidas foneticamente que tornem a frase incompreensível.
+            - Se a palavra for compreensível, mesmo que pareça informal, NÃO a altere.
+
+            MANTENHA SEMPRE:
+            - As formas coloquiais.
+            - O vocabulário e o tempo verbal originais, mesmo se gramaticalmente incorretos.
+
+            NUNCA:
+            - Substitua palavras corretas por outras apenas mais formais ou “melhores”.
+            - Corrija concordância, ortografia estilizada ou expressões informais.
+
+            O texto deve continuar soando como uma fala transcrita natural, apenas com palavras inexistentes corrigidas foneticamente.
+
+            Retorne a transcrição corrigida completa, sem comentários, sem pontuação (exceto os dois pontos (:) que delimitam locutor e fala), sem negrito.
+
+            TEXTO ORIGINAL (frase de uma ou mais palavras):
+            {transcription}
+        """
     ),
-    "gemini-1.5-flash": lambda transcription: (
-        "Considere o exemplo a seguir para correção de uma transcrição:\n\n"
-        "Qual a correção para a transcrição abaixo? Siga rigorosamente estas regras em ordem numérica de prioridade:\n\n"
-        f"{transcription}\n\n"
-        "1. PROIBIÇÕES ABSOLUTAS:\n"
-        "  - NUNCA remova ou altere identificador do falante (início da frase)\n"
-        "  - NUNCA Altere flexão verbal, gênero, número ou grau das palavras\n"
-        "  - NUNCA Troque termo coloquial por formal\n"
-        "  - NUNCA adicione pontuação\n\n"
-        "2. PRESERVAÇÃO DO TEXTO ORIGINAL:\n"
-        "  - Mantenha sempre o identificador inicial da frase inalterado, isso inclui siglas, "
-        "abreviações, pontuação e capitalização\n"
-        "  - Mantenha as letras maiusculas da frase original\n"
-        "  - Mantenha a flexão de genero original das palavras\n"
-        "  - Mantenha repetições e gaguejos sobre palavras\n"
-        '  - Mantenha sempre expressões e marcadores de oralidade (ex: "ufa!", "oh")\n'
-        "  - Mantenha sempre Neologismos e palavras-valise\n\n"
-        "3. INTERVENÇÃO MÍNIMA:\n"
-        "  - Se a transcrição original for compreensível (mesmo com erros), NÃO CORRIJA\n"
-        "  - Apenas corrija quando:\n"
-        "    * A palavra NÃO existe no português\n"
-        "    * Há claramente um erro de reconhecimento fonético\n"
-        "    * O significado original foi completamente distorcido\n\n"
-        "4. PARA FRASES CURTAS (<3 palavras):\n"
-        "  - Só corrija se houver evidente erro de digitação\n"
-        "  - Mantenha inalterado caso contrário\n\n"
-        "5. EM CASO DE DÚVIDA:\n"
-        "  - SEMPRE prefira manter a transcrição original\n\n"
-        "Responda apenas com a correção."
+    "gemini-2.5-flash": lambda transcription: (
+        f"""
+            Você é um pós-processador de transcrições ASR do Brasil.
+
+            Sua função é preservar a fala original ao máximo, corrigindo apenas o estritamente necessário, maximizando a similaridade entre o texto original e a fala real.
+
+            INSTRUÇÕES FUNDAMENTAIS:
+            - Corrija SOMENTE palavras inexistentes em português ou incoerentes com o contexto da entrevista.
+            - Se a palavra for compreensível, mesmo que incoerente e incoesa, mantenha exatamente como está.
+
+            PROIBIÇÕES ABSOLUTAS:
+            - Não reformule frases.
+            - Não corrija gramática, ortografia estilizada ou informalidade.
+            - Não remova repetições.
+
+            Retorne a transcrição corrigida completa, sem comentários, sem pontuação (exceto os dois pontos (:) que delimitam locutor e fala), sem negrito.
+
+            TEXTO ORIGINAL (frase de uma ou mais palavras):
+            {transcription}
+        """
     ),
 }

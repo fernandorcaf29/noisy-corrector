@@ -41,13 +41,13 @@ class FileProcesser:
         file.save(filepath)
         return filepath, filename
 
-    def process(self, file, client, model):
+    def process(self, file, client, model, custom_prompt=None):
         file = self.validate_file(file)
         filepath, filename = self.save_file(file)
         paragraphs, content = self.read_txt_paragraphs(filepath)
 
         corrected_paragraphs = [
-            client.ask_correction(paragraph, model) for paragraph in paragraphs
+            client.ask_correction(paragraph, model, custom_prompt) for paragraph in paragraphs
         ]
 
         corrected_content = "\n\n".join(corrected_paragraphs)
