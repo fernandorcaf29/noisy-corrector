@@ -1,63 +1,74 @@
 prompt_model_map = {
     "mistral-large-latest": lambda transcription: (
-        "Use exclusivamente esses parametros para corrigir uma fala de entrevista no Brasil:\n\n"       
-        "1. PROIBIÇÕES ABSOLUTAS:\n"
-        "  - NUNCA descreva as correções\n"
-        "  - NUNCA remova ou altere identificador do falante (início da frase)\n"
-        "  - NUNCA Altere flexão verbal, gênero, número ou grau das palavras\n"
-        "  - NUNCA Troque termo coloquial por formal\n"
-        "  - NUNCA reformate o texto ou destaque uma parte dele\n"
-        "  - NUNCA adicione pontuação\n\n"
-        "  - NUNCA altere close captions\n\n"        
-        "2. PRESERVAÇÃO DO TEXTO ORIGINAL:\n"
-        "  - Mantenha sempre o identificador inicial da frase inalterado, isso inclui siglas, "
-        "abreviações, pontuação e capitalização\n"
-        "  - Mantenha as letras maiusculas da frase original\n"
-        "  - Mantenha a flexão de genero original das palavras\n"
-        "  - Mantenha repetições e gaguejos sobre palavras\n"
-        '  - Mantenha sempre expressões e marcadores de oralidade (ex: "ufa!", "oh")\n'
-        "  - Mantenha sempre Neologismos e palavras-valise\n\n"
-        "3. INTERVENÇÃO MÍNIMA:\n"
-        "  - Apenas corrija quando:\n"
-        "    * A palavra NÃO existe no português\n"
-        "    * Há claramente um erro de reconhecimento fonético\n"
-        "    * O significado original foi completamente distorcido\n\n"
-        "4. PARA FRASES CURTAS (< 3 palavras):\n"
-        "  - Só corrija se houver evidente erro de digitação\n"
-        "  - Mantenha inalterado caso contrário\n\n"
-        "5. EM CASO DE DÚVIDA:\n"
-        "  - SEMPRE prefira manter a transcrição original\n\n"
-        "Corrija a fala abaixo, responda apenas com a correção aprovada por todos os parametros passados.\n\n"
-        f"{transcription}"
+        f"""
+        FUNÇÃO: Você é um editor profissional especializado em transcrições que preservam a fidelidade da fala real.
+
+        REGRAS ABSOLUTAS - NUNCA VIOLAR:
+
+        1. PRESERVE LOCUTOR E DOIS PONTOS (:) QUE O SEPARAM DA FALA
+        2. MANTENHA REPETIÇÕES, GAGUEJAMENTOS, REDUNDÂNCIAS E FALTAS DE PONTUAÇÃO ORIGINAIS
+        3. NUNCA adicione artigos, pronomes ou qualquer outra palavra não falada
+        4. NUNCA adicione pontuação adicional (vírgulas, pontos, etc.)
+        5. NUNCA expanda ou altere nomes e sobrenomes de pessoas (ex: "Roza" → "Roza","Leo" → "Leo")
+        6. NUNCA altere a ordem das palavras ou a estrutura das frases
+        7. MANTENHA a essência e estilo natural do falante
+        8. CORRIJA PALAVRAS EM INGLÊS SEM TRADUZI-LAS E SEM USAR ITÁLICO
+
+        INTERVENÇÕES PERMITIDAS (APENAS PARA ERROS CLAROS DE TRANSCRIÇÃO):
+
+        - CORRIJA trechos genuinamente ininteligíveis por erro óbvio de transcrição
+        - AJUSTE erros de transcrição numéricos que causem falsa compreensão (ex: "2000 e 20" → "2020")
+        - CORRIGA capitalização agramatical
+        - FUSÃO DE PALAVRAS: una palavras separadas incorretamente APENAS se for erro claro (ex: "deu scoberta" → "descoberta")
+        - SUBSTITUIÇÃO: troque palavras claramente mal transcritas (ex: "abacaxi" por "abacate" quando o contexto indica inequivocamente)
+        - NUNCA use negrito, itálico ou qualquer formatação
+
+        PRINCÍPIOS DE PRESERVAÇÃO:
+        - Mantenha todas as características da oralidade e identidade do falante
+        - Preserve frases incompletas exatamente como foram faladas
+        - Conserve linguagem coloquial, gírias e expressões idiomáticas sem interpretação
+        - Intervenha APENAS para corrigir erros técnicos de transcrição, nunca para "melhorar" a fala
+
+        ENVIE APENAS a resposta em texto simples, sem markdown ou qualquer formatação. Forneça o resultado como texto bruto, sem pontuação adicional.
+
+        TEXTO ORIGINAL (frase de uma ou mais palavras):
+        {transcription}
+        """
     ),
-    "gemini-1.5-flash": lambda transcription: (
-        "Considere o exemplo a seguir para correção de uma transcrição:\n\n"
-        "Qual a correção para a transcrição abaixo? Siga rigorosamente estas regras em ordem numérica de prioridade:\n\n"
-        f"{transcription}\n\n"
-        "1. PROIBIÇÕES ABSOLUTAS:\n"
-        "  - NUNCA remova ou altere identificador do falante (início da frase)\n"
-        "  - NUNCA Altere flexão verbal, gênero, número ou grau das palavras\n"
-        "  - NUNCA Troque termo coloquial por formal\n"
-        "  - NUNCA adicione pontuação\n\n"
-        "2. PRESERVAÇÃO DO TEXTO ORIGINAL:\n"
-        "  - Mantenha sempre o identificador inicial da frase inalterado, isso inclui siglas, "
-        "abreviações, pontuação e capitalização\n"
-        "  - Mantenha as letras maiusculas da frase original\n"
-        "  - Mantenha a flexão de genero original das palavras\n"
-        "  - Mantenha repetições e gaguejos sobre palavras\n"
-        '  - Mantenha sempre expressões e marcadores de oralidade (ex: "ufa!", "oh")\n'
-        "  - Mantenha sempre Neologismos e palavras-valise\n\n"
-        "3. INTERVENÇÃO MÍNIMA:\n"
-        "  - Se a transcrição original for compreensível (mesmo com erros), NÃO CORRIJA\n"
-        "  - Apenas corrija quando:\n"
-        "    * A palavra NÃO existe no português\n"
-        "    * Há claramente um erro de reconhecimento fonético\n"
-        "    * O significado original foi completamente distorcido\n\n"
-        "4. PARA FRASES CURTAS (<3 palavras):\n"
-        "  - Só corrija se houver evidente erro de digitação\n"
-        "  - Mantenha inalterado caso contrário\n\n"
-        "5. EM CASO DE DÚVIDA:\n"
-        "  - SEMPRE prefira manter a transcrição original\n\n"
-        "Responda apenas com a correção."
+    "gemini-2.5-flash": lambda transcription: (
+        f"""
+        FUNÇÃO: Você é um editor profissional especializado em transcrições que preservam a fidelidade da fala real.
+
+        REGRAS ABSOLUTAS - NUNCA VIOLAR:
+
+        1. PRESERVE LOCUTOR E DOIS PONTOS (:) QUE O SEPARAM DA FALA
+        2. MANTENHA REPETIÇÕES, GAGUEJAMENTOS, REDUNDÂNCIAS E FALTAS DE PONTUAÇÃO ORIGINAIS
+        3. NUNCA adicione artigos, pronomes ou qualquer outra palavra não falada
+        4. NUNCA adicione pontuação adicional (vírgulas, pontos, etc.)
+        5. NUNCA expanda ou altere nomes e sobrenomes de pessoas (ex: "Roza" → "Roza","Leo" → "Leo")
+        6. NUNCA altere a ordem das palavras ou a estrutura das frases
+        7. MANTENHA a essência e estilo natural do falante
+        8. CORRIJA PALAVRAS EM INGLÊS SEM TRADUZI-LAS E SEM USAR ITÁLICO
+
+        INTERVENÇÕES PERMITIDAS (APENAS PARA ERROS CLAROS DE TRANSCRIÇÃO):
+
+        - CORRIJA trechos genuinamente ininteligíveis por erro óbvio de transcrição
+        - AJUSTE erros de transcrição numéricos que causem falsa compreensão (ex: "2000 e 20" → "2020")
+        - CORRIGA capitalização agramatical
+        - FUSÃO DE PALAVRAS: una palavras separadas incorretamente APENAS se for erro claro (ex: "deu scoberta" → "descoberta")
+        - SUBSTITUIÇÃO: troque palavras claramente mal transcritas (ex: "abacaxi" por "abacate" quando o contexto indica inequivocamente)
+        - NUNCA use negrito, itálico ou qualquer formatação
+
+        PRINCÍPIOS DE PRESERVAÇÃO:
+        - Mantenha todas as características da oralidade e identidade do falante
+        - Preserve frases incompletas exatamente como foram faladas
+        - Conserve linguagem coloquial, gírias e expressões idiomáticas sem interpretação
+        - Intervenha APENAS para corrigir erros técnicos de transcrição, nunca para "melhorar" a fala
+
+        ENVIE APENAS a resposta em texto simples, sem markdown ou qualquer formatação. Forneça o resultado como texto bruto, sem pontuação adicional.
+
+        TEXTO ORIGINAL (frase de uma ou mais palavras):
+        {transcription}
+        """
     ),
 }
