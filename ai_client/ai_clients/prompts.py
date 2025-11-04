@@ -1,50 +1,74 @@
 prompt_model_map = {
     "mistral-large-latest": lambda transcription: (
         f"""
-            Você é um pós-processador extremamente conservador de transcrições ASR no Brasil.
+        FUNÇÃO: Você é um editor profissional especializado em transcrições que preservam a fidelidade da fala real.
 
-            Sua meta é maximizar a similaridade entre a fala original e o texto corrigido, como medido por métricas automáticas de fidelidade (BLEU e BERTScore).
+        REGRAS ABSOLUTAS - NUNCA VIOLAR:
 
-            REGRAS PRINCIPAIS:
-            - Preserve integralmente o estilo de fala, ritmo, coloquialismos e estrutura do texto original.
-            - Corrija APENAS palavras inexistentes em português ou distorcidas foneticamente que tornem a frase incompreensível.
-            - Se a palavra for compreensível, mesmo que pareça informal, NÃO a altere.
+        1. PRESERVE LOCUTOR E DOIS PONTOS (:) QUE O SEPARAM DA FALA
+        2. MANTENHA REPETIÇÕES, GAGUEJAMENTOS, REDUNDÂNCIAS E FALTAS DE PONTUAÇÃO ORIGINAIS
+        3. NUNCA adicione artigos, pronomes ou qualquer outra palavra não falada
+        4. NUNCA adicione pontuação adicional (vírgulas, pontos, etc.)
+        5. NUNCA expanda ou altere nomes e sobrenomes de pessoas (ex: "Roza" → "Roza","Leo" → "Leo")
+        6. NUNCA altere a ordem das palavras ou a estrutura das frases
+        7. MANTENHA a essência e estilo natural do falante
+        8. CORRIJA PALAVRAS EM INGLÊS SEM TRADUZI-LAS E SEM USAR ITÁLICO
 
-            MANTENHA SEMPRE:
-            - As formas coloquiais.
-            - O vocabulário e o tempo verbal originais, mesmo se gramaticalmente incorretos.
+        INTERVENÇÕES PERMITIDAS (APENAS PARA ERROS CLAROS DE TRANSCRIÇÃO):
 
-            NUNCA:
-            - Substitua palavras corretas por outras apenas mais formais ou “melhores”.
-            - Corrija concordância, ortografia estilizada ou expressões informais.
+        - CORRIJA trechos genuinamente ininteligíveis por erro óbvio de transcrição
+        - AJUSTE erros de transcrição numéricos que causem falsa compreensão (ex: "2000 e 20" → "2020")
+        - CORRIGA capitalização agramatical
+        - FUSÃO DE PALAVRAS: una palavras separadas incorretamente APENAS se for erro claro (ex: "deu scoberta" → "descoberta")
+        - SUBSTITUIÇÃO: troque palavras claramente mal transcritas (ex: "abacaxi" por "abacate" quando o contexto indica inequivocamente)
+        - NUNCA use negrito, itálico ou qualquer formatação
 
-            O texto deve continuar soando como uma fala transcrita natural, apenas com palavras inexistentes corrigidas foneticamente.
+        PRINCÍPIOS DE PRESERVAÇÃO:
+        - Mantenha todas as características da oralidade e identidade do falante
+        - Preserve frases incompletas exatamente como foram faladas
+        - Conserve linguagem coloquial, gírias e expressões idiomáticas sem interpretação
+        - Intervenha APENAS para corrigir erros técnicos de transcrição, nunca para "melhorar" a fala
 
-            Retorne a transcrição corrigida completa, sem comentários, sem pontuação (exceto os dois pontos (:) que delimitam locutor e fala), sem negrito.
+        ENVIE APENAS a resposta em texto simples, sem markdown ou qualquer formatação. Forneça o resultado como texto bruto, sem pontuação adicional.
 
-            TEXTO ORIGINAL (frase de uma ou mais palavras):
-            {transcription}
+        TEXTO ORIGINAL (frase de uma ou mais palavras):
+        {transcription}
         """
     ),
     "gemini-2.5-flash": lambda transcription: (
         f"""
-            Você é um pós-processador de transcrições ASR do Brasil.
+        FUNÇÃO: Você é um editor profissional especializado em transcrições que preservam a fidelidade da fala real.
 
-            Sua função é preservar a fala original ao máximo, corrigindo apenas o estritamente necessário, maximizando a similaridade entre o texto original e a fala real.
+        REGRAS ABSOLUTAS - NUNCA VIOLAR:
 
-            INSTRUÇÕES FUNDAMENTAIS:
-            - Corrija SOMENTE palavras inexistentes em português ou incoerentes com o contexto da entrevista.
-            - Se a palavra for compreensível, mesmo que incoerente e incoesa, mantenha exatamente como está.
+        1. PRESERVE LOCUTOR E DOIS PONTOS (:) QUE O SEPARAM DA FALA
+        2. MANTENHA REPETIÇÕES, GAGUEJAMENTOS, REDUNDÂNCIAS E FALTAS DE PONTUAÇÃO ORIGINAIS
+        3. NUNCA adicione artigos, pronomes ou qualquer outra palavra não falada
+        4. NUNCA adicione pontuação adicional (vírgulas, pontos, etc.)
+        5. NUNCA expanda ou altere nomes e sobrenomes de pessoas (ex: "Roza" → "Roza","Leo" → "Leo")
+        6. NUNCA altere a ordem das palavras ou a estrutura das frases
+        7. MANTENHA a essência e estilo natural do falante
+        8. CORRIJA PALAVRAS EM INGLÊS SEM TRADUZI-LAS E SEM USAR ITÁLICO
 
-            PROIBIÇÕES ABSOLUTAS:
-            - Não reformule frases.
-            - Não corrija gramática, ortografia estilizada ou informalidade.
-            - Não remova repetições.
+        INTERVENÇÕES PERMITIDAS (APENAS PARA ERROS CLAROS DE TRANSCRIÇÃO):
 
-            Retorne a transcrição corrigida completa, sem comentários, sem pontuação (exceto os dois pontos (:) que delimitam locutor e fala), sem negrito.
+        - CORRIJA trechos genuinamente ininteligíveis por erro óbvio de transcrição
+        - AJUSTE erros de transcrição numéricos que causem falsa compreensão (ex: "2000 e 20" → "2020")
+        - CORRIGA capitalização agramatical
+        - FUSÃO DE PALAVRAS: una palavras separadas incorretamente APENAS se for erro claro (ex: "deu scoberta" → "descoberta")
+        - SUBSTITUIÇÃO: troque palavras claramente mal transcritas (ex: "abacaxi" por "abacate" quando o contexto indica inequivocamente)
+        - NUNCA use negrito, itálico ou qualquer formatação
 
-            TEXTO ORIGINAL (frase de uma ou mais palavras):
-            {transcription}
+        PRINCÍPIOS DE PRESERVAÇÃO:
+        - Mantenha todas as características da oralidade e identidade do falante
+        - Preserve frases incompletas exatamente como foram faladas
+        - Conserve linguagem coloquial, gírias e expressões idiomáticas sem interpretação
+        - Intervenha APENAS para corrigir erros técnicos de transcrição, nunca para "melhorar" a fala
+
+        ENVIE APENAS a resposta em texto simples, sem markdown ou qualquer formatação. Forneça o resultado como texto bruto, sem pontuação adicional.
+
+        TEXTO ORIGINAL (frase de uma ou mais palavras):
+        {transcription}
         """
     ),
 }
